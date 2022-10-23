@@ -1,10 +1,10 @@
-use ruststone::redstone::{Redpower, RedstoneDust, RedstoneLogic, RedstoneTorch};
+use ruststone::redstone::{Redpower, RedstoneDust, RedstoneLinking, RedstoneLogic, RedstoneTorch};
 
 #[test]
 fn torch_and_dust() {
-    let mut torch = RedstoneTorch::new();
+    let torch = RedstoneTorch::new();
     let dust = RedstoneDust::new();
-    torch.connect(dust);
+    torch.link(dust.clone());
     torch.apply();
 
     assert_eq!(torch.redpower(), Redpower::new(16));

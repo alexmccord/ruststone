@@ -1,8 +1,4 @@
-use std::{
-    cell::RefCell,
-    ops::{Deref, DerefMut},
-    rc::Rc,
-};
+use std::{cell::RefCell, rc::Rc};
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct Redpower {
@@ -23,47 +19,65 @@ impl Redpower {
     }
 }
 
-pub type RedstoneCell = Rc<RefCell<Redstone>>;
-
+#[derive(Clone)]
 pub enum Redstone {
-    Torch(RedstoneTorch),
-    Dust(RedstoneDust),
+    Torch(Rc<RefCell<RedstoneTorch>>),
+    Dust(Rc<RefCell<RedstoneDust>>),
 }
 
 pub trait RedstoneLogic {
     fn redpower(&self) -> Redpower;
-    fn apply(&mut self);
+    fn apply(&self);
 }
 
-pub trait RedstoneConnection {
-    fn connect(here: RedstoneCell, there: RedstoneCell);
+trait RedstoneConnection {
+    fn add_outgoing_edge(&mut self, outgoing: &Redstone);
+    fn add_incoming_edge(&mut self, incoming: &Redstone);
 }
 
-impl RedstoneLogic for RedstoneCell {
+pub trait RedstoneLinking {
+    fn link(&self, there: Redstone);
+}
+
+impl RedstoneLogic for Redstone {
     fn redpower(&self) -> Redpower {
-        match self.borrow().deref() {
+        match self {
             Redstone::Torch(torch) => torch.redpower(),
             Redstone::Dust(dust) => dust.redpower(),
         }
     }
 
-    fn apply(&mut self) {
-        match self.borrow_mut().deref_mut() {
+    fn apply(&self) {
+        match self {
             Redstone::Torch(torch) => torch.apply(),
             Redstone::Dust(dust) => dust.apply(),
         }
     }
 }
 
+impl RedstoneLinking for Redstone {
+    fn link(&self, outgoing: Redstone) {
+        match self {
+            Redstone::Torch(torch) => torch.borrow_mut().add_outgoing_edge(&outgoing),
+            Redstone::Dust(dust) => dust.borrow_mut().add_outgoing_edge(&outgoing),
+        }
+
+        match outgoing {
+            Redstone::Torch(torch) => torch.borrow_mut().add_incoming_edge(self),
+            Redstone::Dust(dust) => dust.borrow_mut().add_incoming_edge(self),
+        }
+    }
+}
+
 pub struct RedstoneTorch {
-    incoming: Option<RedstoneCell>,
+    incoming: Option<Redstone>,
     state: bool,
-    outgoing: Vec<RedstoneCell>,
+    outgoing: Vec<Redstone>,
 }
 
 impl RedstoneTorch {
-    pub fn new() -> RedstoneCell {
-        Rc::new(RefCell::new(Redstone::Torch(RedstoneTorch {
+    pub fn new() -> Redstone {
+        Redstone::Torch(Rc::new(RefCell::new(RedstoneTorch {
             incoming: None,
             state: true,
             outgoing: Vec::new(),
@@ -71,9 +85,9 @@ impl RedstoneTorch {
     }
 }
 
-impl RedstoneLogic for RedstoneTorch {
+impl RedstoneLogic for Rc<RefCell<RedstoneTorch>> {
     fn redpower(&self) -> Redpower {
-        match &self.incoming {
+        match &self.borrow().incoming {
             Some(incoming) => Redpower::strength(if incoming.redpower().has_power() {
                 0
             } else {
@@ -83,26 +97,36 @@ impl RedstoneLogic for RedstoneTorch {
         }
     }
 
-    fn apply(&mut self) {
+    fn apply(&self) {
         if self.redpower().has_power() {
-            self.state = false;
+            self.borrow_mut().state = false;
         }
 
-        for outgoing in self.outgoing.iter_mut() {
+        for outgoing in self.borrow().outgoing.iter() {
             outgoing.apply();
         }
     }
 }
 
+impl RedstoneConnection for RedstoneTorch {
+    fn add_outgoing_edge(&mut self, outgoing: &Redstone) {
+        self.outgoing.push(outgoing.clone());
+    }
+
+    fn add_incoming_edge(&mut self, incoming: &Redstone) {
+        self.incoming = Some(incoming.clone());
+    }
+}
+
 pub struct RedstoneDust {
-    incoming: Vec<RedstoneCell>,
+    incoming: Vec<Redstone>,
     strength: u32,
-    outgoing: Vec<RedstoneCell>,
+    outgoing: Vec<Redstone>,
 }
 
 impl RedstoneDust {
-    pub fn new() -> RedstoneCell {
-        Rc::new(RefCell::new(Redstone::Dust(RedstoneDust {
+    pub fn new() -> Redstone {
+        Redstone::Dust(Rc::new(RefCell::new(RedstoneDust {
             incoming: Vec::new(),
             strength: 0,
             outgoing: Vec::new(),
@@ -110,23 +134,40 @@ impl RedstoneDust {
     }
 }
 
-impl RedstoneLogic for RedstoneDust {
+impl RedstoneLogic for Rc<RefCell<RedstoneDust>> {
     fn redpower(&self) -> Redpower {
-        let strengths: Vec<Redpower> = self.incoming.iter().map(RedstoneLogic::redpower).collect();
+        let strengths: Vec<Redpower> = self
+            .borrow()
+            .incoming
+            .iter()
+            .map(RedstoneLogic::redpower)
+            .collect();
+
         match strengths.iter().max_by_key(|r| r.strength) {
             Some(max) => Redpower::strength(max.strength.saturating_sub(1)),
             None => Redpower::strength(0),
         }
     }
 
-    fn apply(&mut self) {
-        let incoming_redpower = self.redpower();
-        if incoming_redpower.has_power() {
-            self.strength = incoming_redpower.strength;
+    fn apply(&self) {
+        let redpower = self.redpower();
+
+        if redpower.has_power() {
+            self.borrow_mut().strength = redpower.strength;
         }
 
-        for outgoing in self.outgoing.iter_mut() {
+        for outgoing in self.borrow().outgoing.iter() {
             outgoing.apply();
         }
+    }
+}
+
+impl RedstoneConnection for RedstoneDust {
+    fn add_outgoing_edge(&mut self, outgoing: &Redstone) {
+        self.outgoing.push(outgoing.clone());
+    }
+
+    fn add_incoming_edge(&mut self, incoming: &Redstone) {
+        self.incoming.push(incoming.clone());
     }
 }
