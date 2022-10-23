@@ -1,4 +1,8 @@
-use std::{cell::RefCell, rc::Rc, ops::{Deref, DerefMut}};
+use std::{
+    cell::RefCell,
+    ops::{Deref, DerefMut},
+    rc::Rc,
+};
 
 pub struct Redpower {
     strength: u32,
@@ -101,11 +105,7 @@ impl RedstoneDust {
 
 impl RedstoneLogic for RedstoneDust {
     fn redpower(&self) -> Redpower {
-        match self
-            .incoming
-            .iter()
-            .max_by_key(|r| r.redpower().strength)
-        {
+        match self.incoming.iter().max_by_key(|r| r.redpower().strength) {
             Some(max) => Redpower::strength(max.redpower().strength.saturating_sub(1)),
             None => Redpower::strength(0),
         }
