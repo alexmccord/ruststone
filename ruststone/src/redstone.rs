@@ -105,8 +105,9 @@ impl RedstoneDust {
 
 impl RedstoneLogic for RedstoneDust {
     fn redpower(&self) -> Redpower {
-        match self.incoming.iter().max_by_key(|r| r.redpower().strength) {
-            Some(max) => Redpower::strength(max.redpower().strength.saturating_sub(1)),
+        let strengths: Vec<Redpower> = self.incoming.iter().map(RedstoneLogic::redpower).collect();
+        match strengths.iter().max_by_key(|r| r.strength) {
+            Some(max) => Redpower::strength(max.strength.saturating_sub(1)),
             None => Redpower::strength(0),
         }
     }
