@@ -36,7 +36,7 @@ trait RedstoneConnection {
 }
 
 pub trait RedstoneLinking {
-    fn link(&self, there: Redstone);
+    fn link(&self, there: &Redstone);
 }
 
 impl RedstoneLogic for Redstone {
@@ -56,13 +56,13 @@ impl RedstoneLogic for Redstone {
 }
 
 impl RedstoneLinking for Redstone {
-    fn link(&self, outgoing: Redstone) {
+    fn link(&self, there: &Redstone) {
         match self {
-            Redstone::Torch(torch) => torch.borrow_mut().add_outgoing_edge(&outgoing),
-            Redstone::Dust(dust) => dust.borrow_mut().add_outgoing_edge(&outgoing),
+            Redstone::Torch(torch) => torch.borrow_mut().add_outgoing_edge(&there),
+            Redstone::Dust(dust) => dust.borrow_mut().add_outgoing_edge(&there),
         }
 
-        match outgoing {
+        match there {
             Redstone::Torch(torch) => torch.borrow_mut().add_incoming_edge(self),
             Redstone::Dust(dust) => dust.borrow_mut().add_incoming_edge(self),
         }

@@ -5,7 +5,7 @@ fn torch_and_dust() {
     let torch = RedstoneTorch::new();
     let dust = RedstoneDust::new();
 
-    torch.link(dust.clone());
+    torch.link(&dust);
 
     torch.apply();
 
@@ -21,9 +21,9 @@ fn torch_and_dust_and_dust_and_dust() {
     let dust2 = RedstoneDust::new();
     let dust3 = RedstoneDust::new();
     
-    torch.link(dust1.clone());
-    dust1.link(dust2.clone());
-    dust2.link(dust3.clone());
+    torch.link(&dust1);
+    dust1.link(&dust2);
+    dust2.link(&dust3);
 
     torch.apply();
 
@@ -41,10 +41,10 @@ fn dust_in_the_middle_of_two_torches() {
     let dust3 = RedstoneDust::new();
     let torch_r = RedstoneTorch::new();
 
-    torch_l.link(dust1.clone());
-    dust1.link(dust2.clone());
-    dust2.link(dust3.clone());
-    torch_r.link(dust3.clone());
+    torch_l.link(&dust1);
+    dust1.link(&dust2);
+    dust2.link(&dust3);
+    torch_r.link(&dust3);
 
     torch_l.apply();
 
@@ -61,8 +61,8 @@ fn torch_is_off_if_its_incoming_edge_is_on() {
     let dust = RedstoneDust::new();
     let output = RedstoneTorch::new();
 
-    torch.link(dust.clone());
-    dust.link(output.clone());
+    torch.link(&dust);
+    dust.link(&output);
 
     torch.apply();
 
