@@ -1,4 +1,4 @@
-use ruststone::redstone::{RedstoneDust, RedstoneLogic, RedstoneTorch, Redpower};
+use ruststone::redstone::{Redpower, RedstoneDust, RedstoneLogic, RedstoneTorch};
 
 #[test]
 fn torch_and_dust() {
