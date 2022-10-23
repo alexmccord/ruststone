@@ -86,19 +86,25 @@ fn dust_in_the_middle_of_two_torches() {
     let dust1 = RedstoneDust::new();
     let dust2 = RedstoneDust::new();
     let dust3 = RedstoneDust::new();
+    let dust4 = RedstoneDust::new();
+    let dust5 = RedstoneDust::new();
     let torch_r = RedstoneTorch::new();
 
     torch_l.link(&dust1);
     dust1.link(&dust2);
     dust2.link(&dust3);
-    torch_r.link(&dust3);
+    dust3.link(&dust4);
+    dust4.link(&dust5);
+    torch_r.link(&dust5);
 
     torch_l.apply();
 
     assert_eq!(torch_l.redpower(), Redpower::new(16));
     assert_eq!(dust1.redpower(), Redpower::new(15));
     assert_eq!(dust2.redpower(), Redpower::new(14));
-    assert_eq!(dust3.redpower(), Redpower::new(15));
+    assert_eq!(dust3.redpower(), Redpower::new(13));
+    assert_eq!(dust4.redpower(), Redpower::new(14));
+    assert_eq!(dust5.redpower(), Redpower::new(15));
     assert_eq!(torch_r.redpower(), Redpower::new(16));
 }
 
