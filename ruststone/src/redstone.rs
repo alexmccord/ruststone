@@ -4,16 +4,17 @@ use std::{
     rc::Rc,
 };
 
+#[derive(Debug, PartialEq, Eq)]
 pub struct Redpower {
     strength: u32,
 }
 
 impl Redpower {
-    fn new(strength: u32) -> Redpower {
+    pub fn new(strength: u32) -> Redpower {
         Redpower { strength }
     }
 
-    fn strength(strength: u32) -> Redpower {
+    pub fn strength(strength: u32) -> Redpower {
         Redpower::new(strength)
     }
 
