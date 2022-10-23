@@ -68,9 +68,9 @@ impl RedstoneLogic for RedstoneTorch {
     fn redpower(&self) -> Redpower {
         match &self.incoming {
             Some(incoming) => Redpower::strength(if incoming.redpower().has_power() {
-                16
-            } else {
                 0
+            } else {
+                16
             }),
             None => Redpower::strength(16),
         }
