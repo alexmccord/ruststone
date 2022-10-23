@@ -66,7 +66,7 @@ impl RedstoneTorch {
 
 impl RedstoneLogic for RedstoneTorch {
     fn redpower(&self) -> Redpower {
-        match self.incoming.as_ref() {
+        match &self.incoming {
             Some(incoming) => Redpower::strength(if incoming.redpower().has_power() {
                 16
             } else {
@@ -81,8 +81,8 @@ impl RedstoneLogic for RedstoneTorch {
             self.state = false;
         }
 
-        for outgoing in self.outgoing.iter() {
-            outgoing.clone().apply();
+        for outgoing in self.outgoing.iter_mut() {
+            outgoing.apply();
         }
     }
 }
@@ -117,8 +117,8 @@ impl RedstoneLogic for RedstoneDust {
             self.strength = incoming_redpower.strength;
         }
 
-        for outgoing in self.outgoing.iter() {
-            outgoing.clone().apply();
+        for outgoing in self.outgoing.iter_mut() {
+            outgoing.apply();
         }
     }
 }
