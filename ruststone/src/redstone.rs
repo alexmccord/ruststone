@@ -23,17 +23,23 @@ impl Redpower {
     }
 }
 
-pub trait RedstoneLogic {
-    fn redpower(&self) -> Redpower;
-    fn apply(&mut self);
-}
+pub type RedstoneCell = Rc<RefCell<Redstone>>;
 
 pub enum Redstone {
     Torch(RedstoneTorch),
     Dust(RedstoneDust),
 }
 
-impl RedstoneLogic for Rc<RefCell<Redstone>> {
+pub trait RedstoneLogic {
+    fn redpower(&self) -> Redpower;
+    fn apply(&mut self);
+}
+
+pub trait RedstoneConnection {
+    fn connect(here: RedstoneCell, there: RedstoneCell);
+}
+
+impl RedstoneLogic for RedstoneCell {
     fn redpower(&self) -> Redpower {
         match self.borrow().deref() {
             Redstone::Torch(torch) => torch.redpower(),
@@ -50,13 +56,13 @@ impl RedstoneLogic for Rc<RefCell<Redstone>> {
 }
 
 pub struct RedstoneTorch {
-    incoming: Option<Rc<RefCell<Redstone>>>,
+    incoming: Option<RedstoneCell>,
     state: bool,
-    outgoing: Vec<Rc<RefCell<Redstone>>>,
+    outgoing: Vec<RedstoneCell>,
 }
 
 impl RedstoneTorch {
-    pub fn new() -> Rc<RefCell<Redstone>> {
+    pub fn new() -> RedstoneCell {
         Rc::new(RefCell::new(Redstone::Torch(RedstoneTorch {
             incoming: None,
             state: true,
@@ -89,13 +95,13 @@ impl RedstoneLogic for RedstoneTorch {
 }
 
 pub struct RedstoneDust {
-    incoming: Vec<Rc<RefCell<Redstone>>>,
+    incoming: Vec<RedstoneCell>,
     strength: u32,
-    outgoing: Vec<Rc<RefCell<Redstone>>>,
+    outgoing: Vec<RedstoneCell>,
 }
 
 impl RedstoneDust {
-    pub fn new() -> Rc<RefCell<Redstone>> {
+    pub fn new() -> RedstoneCell {
         Rc::new(RefCell::new(Redstone::Dust(RedstoneDust {
             incoming: Vec::new(),
             strength: 0,
