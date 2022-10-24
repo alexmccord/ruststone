@@ -1,9 +1,9 @@
-use ruststone::redstone::{Redpower, RedstoneDust, RedstoneLinking, RedstoneLogic, RedstoneTorch};
+use ruststone::{Redpower, Redstone, RedstoneLinking, RedstoneLogic};
 
 #[test]
 fn torch_and_dust() {
-    let torch = RedstoneTorch::new();
-    let dust = RedstoneDust::new();
+    let torch = Redstone::torch();
+    let dust = Redstone::dust();
 
     torch.link(&dust);
 
@@ -13,13 +13,12 @@ fn torch_and_dust() {
     assert_eq!(dust.redpower(), Redpower::new(15));
 }
 
-
 #[test]
 fn torch_and_dust_and_dust_and_dust() {
-    let torch = RedstoneTorch::new();
-    let dust1 = RedstoneDust::new();
-    let dust2 = RedstoneDust::new();
-    let dust3 = RedstoneDust::new();
+    let torch = Redstone::torch();
+    let dust1 = Redstone::dust();
+    let dust2 = Redstone::dust();
+    let dust3 = Redstone::dust();
 
     torch.link(&dust1);
     dust1.link(&dust2);
@@ -35,24 +34,24 @@ fn torch_and_dust_and_dust_and_dust() {
 
 #[test]
 fn torch_and_dust_until_it_runs_out_of_redpower() {
-    let torch = RedstoneTorch::new();
-    let dust1 = RedstoneDust::new();
-    let dust2 = RedstoneDust::new();
-    let dust3 = RedstoneDust::new();
-    let dust4 = RedstoneDust::new();
-    let dust5 = RedstoneDust::new();
-    let dust6 = RedstoneDust::new();
-    let dust7 = RedstoneDust::new();
-    let dust8 = RedstoneDust::new();
-    let dust9 = RedstoneDust::new();
-    let dust10 = RedstoneDust::new();
-    let dust11 = RedstoneDust::new();
-    let dust12 = RedstoneDust::new();
-    let dust13 = RedstoneDust::new();
-    let dust14 = RedstoneDust::new();
-    let dust15 = RedstoneDust::new();
-    let dust16 = RedstoneDust::new();
-    let dust17 = RedstoneDust::new();
+    let torch = Redstone::torch();
+    let dust1 = Redstone::dust();
+    let dust2 = Redstone::dust();
+    let dust3 = Redstone::dust();
+    let dust4 = Redstone::dust();
+    let dust5 = Redstone::dust();
+    let dust6 = Redstone::dust();
+    let dust7 = Redstone::dust();
+    let dust8 = Redstone::dust();
+    let dust9 = Redstone::dust();
+    let dust10 = Redstone::dust();
+    let dust11 = Redstone::dust();
+    let dust12 = Redstone::dust();
+    let dust13 = Redstone::dust();
+    let dust14 = Redstone::dust();
+    let dust15 = Redstone::dust();
+    let dust16 = Redstone::dust();
+    let dust17 = Redstone::dust();
 
     torch.link(&dust1);
     dust1.link(&dust2);
@@ -82,13 +81,13 @@ fn torch_and_dust_until_it_runs_out_of_redpower() {
 
 #[test]
 fn dust_in_the_middle_of_two_torches() {
-    let torch_l = RedstoneTorch::new();
-    let dust1 = RedstoneDust::new();
-    let dust2 = RedstoneDust::new();
-    let dust3 = RedstoneDust::new();
-    let dust4 = RedstoneDust::new();
-    let dust5 = RedstoneDust::new();
-    let torch_r = RedstoneTorch::new();
+    let torch_l = Redstone::torch();
+    let dust1 = Redstone::dust();
+    let dust2 = Redstone::dust();
+    let dust3 = Redstone::dust();
+    let dust4 = Redstone::dust();
+    let dust5 = Redstone::dust();
+    let torch_r = Redstone::torch();
 
     torch_l.link(&dust1);
     dust1.link(&dust2);
@@ -110,9 +109,9 @@ fn dust_in_the_middle_of_two_torches() {
 
 #[test]
 fn torch_is_off_if_its_incoming_edge_is_on() {
-    let torch = RedstoneTorch::new();
-    let dust = RedstoneDust::new();
-    let output = RedstoneTorch::new();
+    let torch = Redstone::torch();
+    let dust = Redstone::dust();
+    let output = Redstone::torch();
 
     torch.link(&dust);
     dust.link(&output);
