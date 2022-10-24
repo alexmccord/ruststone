@@ -1,6 +1,6 @@
 use std::{cell::RefCell, rc::Rc};
 
-use crate::{Redpower, Redstone, RedstoneDust, RedstoneTorch, Frame};
+use crate::{Frame, Redpower, Redstone, RedstoneDust, RedstoneTorch};
 
 pub trait RedstoneLogic {
     fn try_use_computed_redpower(&self, frame: Frame) -> Option<Redpower>;

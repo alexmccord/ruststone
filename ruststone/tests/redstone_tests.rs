@@ -1,4 +1,4 @@
-use ruststone::{RedstoneLinking, RedstoneLogic, Redpower, Redstone, Frame};
+use ruststone::{Frame, Redpower, Redstone, RedstoneLinking, RedstoneLogic};
 
 #[test]
 fn torch_and_dust() {
