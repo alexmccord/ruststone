@@ -7,8 +7,6 @@ fn torch_and_dust() {
 
     torch.link(&dust);
 
-    torch.apply();
-
     assert_eq!(torch.redpower(), Redpower::new(16));
     assert_eq!(dust.redpower(), Redpower::new(15));
 }
@@ -23,8 +21,6 @@ fn torch_and_dust_and_dust_and_dust() {
     torch.link(&dust1);
     dust1.link(&dust2);
     dust2.link(&dust3);
-
-    torch.apply();
 
     assert_eq!(torch.redpower(), Redpower::new(16));
     assert_eq!(dust1.redpower(), Redpower::new(15));
@@ -71,8 +67,6 @@ fn torch_and_dust_until_it_runs_out_of_redpower() {
     dust15.link(&dust16);
     dust16.link(&dust17);
 
-    torch.apply();
-
     assert_eq!(torch.redpower(), Redpower::new(16));
     assert_eq!(dust15.redpower(), Redpower::new(1));
     assert_eq!(dust16.redpower(), Redpower::new(0));
@@ -96,8 +90,6 @@ fn dust_in_the_middle_of_two_torches() {
     dust4.link(&dust5);
     torch_r.link(&dust5);
 
-    torch_l.apply();
-
     assert_eq!(torch_l.redpower(), Redpower::new(16));
     assert_eq!(dust1.redpower(), Redpower::new(15));
     assert_eq!(dust2.redpower(), Redpower::new(14));
@@ -115,8 +107,6 @@ fn torch_is_off_if_its_incoming_edge_is_on() {
 
     torch.link(&dust);
     dust.link(&output);
-
-    torch.apply();
 
     assert_eq!(torch.redpower(), Redpower::new(16));
     assert_eq!(dust.redpower(), Redpower::new(15));
