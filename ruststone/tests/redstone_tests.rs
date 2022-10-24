@@ -1,4 +1,4 @@
-use ruststone::{Redpower, Redstone, RedstoneLinking, RedstoneLogic};
+use ruststone::{RedstoneLinking, RedstoneLogic, Redpower, Redstone, Frame};
 
 #[test]
 fn torch_and_dust() {
@@ -7,8 +7,11 @@ fn torch_and_dust() {
 
     torch.link(&dust);
 
-    assert_eq!(torch.redpower(), Redpower::new(16));
-    assert_eq!(dust.redpower(), Redpower::new(15));
+    let first_frame = Frame::new();
+    torch.apply(first_frame);
+
+    assert_eq!(torch.redpower(first_frame), Redpower::new(16));
+    assert_eq!(dust.redpower(first_frame), Redpower::new(15));
 }
 
 #[test]
@@ -22,10 +25,13 @@ fn torch_and_dust_and_dust_and_dust() {
     dust1.link(&dust2);
     dust2.link(&dust3);
 
-    assert_eq!(torch.redpower(), Redpower::new(16));
-    assert_eq!(dust1.redpower(), Redpower::new(15));
-    assert_eq!(dust2.redpower(), Redpower::new(14));
-    assert_eq!(dust3.redpower(), Redpower::new(13));
+    let first_frame = Frame::new();
+    torch.apply(first_frame);
+
+    assert_eq!(torch.redpower(first_frame), Redpower::new(16));
+    assert_eq!(dust1.redpower(first_frame), Redpower::new(15));
+    assert_eq!(dust2.redpower(first_frame), Redpower::new(14));
+    assert_eq!(dust3.redpower(first_frame), Redpower::new(13));
 }
 
 #[test]
@@ -67,10 +73,13 @@ fn torch_and_dust_until_it_runs_out_of_redpower() {
     dust15.link(&dust16);
     dust16.link(&dust17);
 
-    assert_eq!(torch.redpower(), Redpower::new(16));
-    assert_eq!(dust15.redpower(), Redpower::new(1));
-    assert_eq!(dust16.redpower(), Redpower::new(0));
-    assert_eq!(dust17.redpower(), Redpower::new(0));
+    let first_frame = Frame::new();
+    torch.apply(first_frame);
+
+    assert_eq!(torch.redpower(first_frame), Redpower::new(16));
+    assert_eq!(dust15.redpower(first_frame), Redpower::new(1));
+    assert_eq!(dust16.redpower(first_frame), Redpower::new(0));
+    assert_eq!(dust17.redpower(first_frame), Redpower::new(0));
 }
 
 #[test]
@@ -90,13 +99,16 @@ fn dust_in_the_middle_of_two_torches() {
     dust4.link(&dust5);
     torch_r.link(&dust5);
 
-    assert_eq!(torch_l.redpower(), Redpower::new(16));
-    assert_eq!(dust1.redpower(), Redpower::new(15));
-    assert_eq!(dust2.redpower(), Redpower::new(14));
-    assert_eq!(dust3.redpower(), Redpower::new(13));
-    assert_eq!(dust4.redpower(), Redpower::new(14));
-    assert_eq!(dust5.redpower(), Redpower::new(15));
-    assert_eq!(torch_r.redpower(), Redpower::new(16));
+    let first_frame = Frame::new();
+    torch_l.apply(first_frame);
+
+    assert_eq!(torch_l.redpower(first_frame), Redpower::new(16));
+    assert_eq!(dust1.redpower(first_frame), Redpower::new(15));
+    assert_eq!(dust2.redpower(first_frame), Redpower::new(14));
+    assert_eq!(dust3.redpower(first_frame), Redpower::new(13));
+    assert_eq!(dust4.redpower(first_frame), Redpower::new(14));
+    assert_eq!(dust5.redpower(first_frame), Redpower::new(15));
+    assert_eq!(torch_r.redpower(first_frame), Redpower::new(16));
 }
 
 #[test]
@@ -108,7 +120,10 @@ fn torch_is_off_if_its_incoming_edge_is_on() {
     torch.link(&dust);
     dust.link(&output);
 
-    assert_eq!(torch.redpower(), Redpower::new(16));
-    assert_eq!(dust.redpower(), Redpower::new(15));
-    assert_eq!(output.redpower(), Redpower::new(0));
+    let first_frame = Frame::new();
+    torch.apply(first_frame);
+
+    assert_eq!(torch.redpower(first_frame), Redpower::new(16));
+    assert_eq!(dust.redpower(first_frame), Redpower::new(15));
+    assert_eq!(output.redpower(first_frame), Redpower::new(0));
 }
