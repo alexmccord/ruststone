@@ -1,39 +1,71 @@
-use std::{cell::RefCell, rc::Rc};
+use std::{
+    borrow::Borrow,
+    cell::RefCell,
+    hash::{Hash, Hasher},
+    ptr,
+    rc::Rc,
+};
 
-use crate::Redstate;
+pub(crate) type RedstoneRef = Rc<RefCell<Redstone>>;
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Eq)]
 pub enum Redstone {
-    Torch(Rc<RefCell<RedstoneTorch>>),
-    Dust(Rc<RefCell<RedstoneDust>>),
+    Torch {
+        incoming: Option<RedstoneRef>,
+        outgoing: Vec<RedstoneRef>,
+    },
+    Dust {
+        edges: Vec<RedstoneRef>,
+    },
+}
+
+impl Hash for Redstone {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        ptr::hash(self, state);
+    }
 }
 
 impl Redstone {
-    pub fn torch() -> Redstone {
-        Redstone::Torch(Rc::new(RefCell::new(RedstoneTorch {
+    pub fn torch() -> RedstoneRef {
+        Rc::new(RefCell::new(Redstone::Torch {
             incoming: None,
-            redstate: Redstate::new(),
             outgoing: Vec::new(),
-        })))
+        }))
     }
 
-    pub fn dust() -> Redstone {
-        Redstone::Dust(Rc::new(RefCell::new(RedstoneDust {
-            incoming: Vec::new(),
-            redstate: Redstate::new(),
-            outgoing: Vec::new(),
-        })))
+    pub fn dust() -> RedstoneRef {
+        Rc::new(RefCell::new(Redstone::Dust { edges: Vec::new() }))
     }
 }
 
-pub struct RedstoneTorch {
-    pub(crate) incoming: Option<Redstone>,
-    pub(crate) redstate: Redstate<bool>,
-    pub(crate) outgoing: Vec<Redstone>,
-}
+pub fn link(here: &RedstoneRef, there: &RedstoneRef) {
+    match *here.borrow_mut() {
+        Redstone::Torch {
+            ref mut incoming, ..
+        } => {
+            assert!(Borrow::borrow(incoming).is_none());
+            *incoming = Some(Rc::clone(there));
+        }
+        Redstone::Dust { ref mut edges } => {
+            assert!(edges.len() <= 6, "Dust can only connect up to 6 edges");
+            if !edges.contains(there) {
+                edges.push(Rc::clone(there));
+            }
+        }
+    }
 
-pub struct RedstoneDust {
-    pub(crate) incoming: Vec<Redstone>,
-    pub(crate) redstate: Redstate<u32>,
-    pub(crate) outgoing: Vec<Redstone>,
+    match *there.borrow_mut() {
+        Redstone::Torch {
+            ref mut outgoing, ..
+        } => {
+            assert!(outgoing.len() <= 5, "Torch can only connect up to 5 edges");
+            outgoing.push(Rc::clone(here));
+        }
+        Redstone::Dust { ref mut edges } => {
+            assert!(edges.len() <= 6, "Dust can only connect up to 6 edges");
+            if !edges.contains(here) {
+                edges.push(Rc::clone(here));
+            }
+        }
+    }
 }
