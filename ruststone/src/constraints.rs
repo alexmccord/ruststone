@@ -4,7 +4,7 @@ use std::{
     rc::Rc,
 };
 
-use crate::{Frame, Redstone, RedstoneRef, Redstate};
+use crate::{Frame, Redstate, Redstone, RedstoneRef};
 
 struct Constraint {
     // The next frame this constraint can be dispatched. If `None`, it's dispatchable right away.
