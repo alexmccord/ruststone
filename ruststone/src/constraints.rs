@@ -1,24 +1,15 @@
 use std::{
-    cell::Cell,
-    collections::{HashSet, VecDeque},
+    cell::{Cell, RefCell},
+    collections::{HashMap, HashSet, VecDeque},
     rc::Rc,
 };
 
-use crate::{Redstone, RedstoneRef};
-
-#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-struct Frame(u64);
-
-impl Frame {
-    fn next(&self) -> Frame {
-        let Frame(frame) = self;
-        Frame(frame + 1)
-    }
-}
+use crate::{Frame, Redstone, RedstoneRef, Redstate};
 
 struct Constraint {
     // The next frame this constraint can be dispatched. If `None`, it's dispatchable right away.
     next_dispatch_frame: Cell<Option<Frame>>,
+    dependencies: RefCell<Vec<Rc<Constraint>>>,
     redstone: RedstoneRef,
 }
 
@@ -26,19 +17,82 @@ impl Constraint {
     fn new(redstone: RedstoneRef) -> Rc<Constraint> {
         Rc::new(Constraint {
             next_dispatch_frame: Cell::new(None),
+            dependencies: RefCell::new(Vec::new()),
             redstone,
         })
     }
 
     fn dispatchable(&self, current_frame: Frame) -> bool {
-        match self.next_dispatch_frame.get() {
+        let is_current_or_future_frame = match self.next_dispatch_frame.get() {
             Some(frame) => frame <= current_frame,
             None => true,
-        }
+        };
+
+        let all_dependencies_dispatchable = self
+            .dependencies
+            .borrow()
+            .iter()
+            .all(|r| r.dispatchable(current_frame));
+
+        is_current_or_future_frame && all_dependencies_dispatchable
     }
 
-    fn dispatch(&self, current_frame: Frame) {
+    fn dispatch(&self, current_frame: Frame) -> Vec<Rc<Constraint>> {
         assert!(self.dispatchable(current_frame));
+        let mut extra = Vec::new();
+
+        match *self.redstone.borrow() {
+            Redstone::Torch {
+                ref incoming,
+                ref outgoing,
+                ref redstate,
+            } => {
+                match incoming {
+                    Some(incoming) => redstate.set(
+                        if incoming.borrow().redstate().is_on() {
+                            0
+                        } else {
+                            16
+                        },
+                        current_frame,
+                    ),
+                    None => redstate.set(16, current_frame),
+                }
+
+                for out in outgoing {
+                    extra.push(Constraint::new(out.clone()))
+                }
+            }
+            Redstone::Dust {
+                ref edges,
+                ref redstate,
+            } => {
+                // A Dust having no edges is disjoint, so it can't
+                // possibly have reached this point by now.
+                let max: Redstate = edges
+                    .iter()
+                    .map(|r| r.borrow().redstate().clone())
+                    .filter(|r| r.updated_frame() == Some(current_frame))
+                    .max_by_key(|r| r.get())
+                    .unwrap();
+
+                redstate.set(max.get().saturating_sub(1), current_frame);
+
+                for edge in edges {
+                    if edge.borrow().redstate().get() < redstate.get() {
+                        extra.push(Constraint::new(edge.clone()))
+                    }
+                }
+            }
+        }
+
+        extra
+    }
+
+    fn depends_on(&self, constraints: &Vec<Rc<Constraint>>) {
+        for c in constraints {
+            self.dependencies.borrow_mut().push(c.clone());
+        }
     }
 }
 
@@ -53,47 +107,82 @@ impl ConstraintGraph {
         }
     }
 
-    pub fn collect(redstone: RedstoneRef) -> ConstraintGraph {
-        let mut cgb = ConstraintGraph::new();
+    fn build_queue(redstone: RedstoneRef) -> VecDeque<RedstoneRef> {
         let mut visited = HashSet::new();
-        let mut queue = VecDeque::new();
-        queue.push_front(redstone);
+        let mut discovery_queue = VecDeque::new();
+        discovery_queue.push_front(redstone);
 
-        while let Some(current) = queue.pop_front() {
+        // The queue of RedstoneRef to later drain and turn
+        // them into a dependency graph of constraints.
+        let mut queue = VecDeque::new();
+
+        while let Some(current) = discovery_queue.pop_front() {
             if visited.contains(&Rc::as_ptr(&current)) {
                 continue;
             }
 
             visited.insert(Rc::as_ptr(&current));
-            cgb.make_constraint_for_redstone(current.clone());
+            queue.push_back(current.clone());
 
             match *current.borrow() {
                 Redstone::Torch {
                     ref incoming,
                     ref outgoing,
+                    ..
                 } => {
                     if let Some(incoming) = incoming {
-                        queue.push_front(incoming.clone())
+                        discovery_queue.push_front(incoming.clone())
                     }
 
                     for redstone_cell in outgoing {
-                        queue.push_front(redstone_cell.clone());
+                        discovery_queue.push_front(redstone_cell.clone());
                     }
                 }
-                Redstone::Dust { ref edges } => {
+                Redstone::Dust { ref edges, .. } => {
                     for edge in edges {
-                        queue.push_front(edge.clone());
+                        discovery_queue.push_front(edge.clone());
                     }
                 }
             }
         }
 
-        cgb
+        queue
     }
 
-    fn make_constraint_for_redstone(&mut self, redstone: RedstoneRef) {
-        let c = Constraint::new(redstone.clone());
-        self.constraints.push(c.clone());
+    pub fn collect(redstone: RedstoneRef) -> ConstraintGraph {
+        let mut queue = ConstraintGraph::build_queue(redstone);
+        let mut symbols = HashMap::new();
+
+        while let Some(redstone) = queue.pop_front() {
+            match *redstone.borrow() {
+                Redstone::Torch {
+                    incoming: Some(ref incoming),
+                    ..
+                } => {
+                    if let Some(deps) = symbols.get(&Rc::as_ptr(incoming)) {
+                        let c = Constraint::new(redstone.clone());
+                        c.depends_on(deps);
+                        symbols.insert(Rc::as_ptr(&redstone), vec![c]);
+                    } else {
+                        queue.push_back(redstone.clone());
+                    }
+                }
+                Redstone::Torch { incoming: None, .. } => {
+                    let c = Constraint::new(redstone.clone());
+                    symbols.insert(Rc::as_ptr(&redstone), vec![c]);
+                }
+                Redstone::Dust { .. } => {
+                    symbols.insert(Rc::as_ptr(&redstone), Vec::new());
+                }
+            }
+        }
+
+        let mut cgb = ConstraintGraph::new();
+        for deps in symbols.values_mut() {
+            cgb.constraints.append(deps);
+        }
+
+        cgb
     }
 
     pub fn len(&self) -> usize {
@@ -121,7 +210,10 @@ impl ConstraintGraph {
                     continue;
                 }
 
-                c.dispatch(frame);
+                let extra_constraints = c.dispatch(frame);
+                for c in extra_constraints {
+                    queue.push_back(c);
+                }
             }
 
             queue = deferred;

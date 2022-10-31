@@ -1,10 +1,6 @@
-use std::{
-    borrow::Borrow,
-    cell::RefCell,
-    hash::{Hash, Hasher},
-    ptr,
-    rc::Rc,
-};
+use std::{borrow::Borrow, cell::RefCell, rc::Rc};
+
+use crate::Redstate;
 
 pub(crate) type RedstoneRef = Rc<RefCell<Redstone>>;
 
@@ -13,40 +9,47 @@ pub enum Redstone {
     Torch {
         incoming: Option<RedstoneRef>,
         outgoing: Vec<RedstoneRef>,
+        redstate: Redstate,
     },
     Dust {
         edges: Vec<RedstoneRef>,
+        redstate: Redstate,
     },
 }
 
-impl Hash for Redstone {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        ptr::hash(self, state);
-    }
-}
-
 impl Redstone {
+    pub fn redstate(&self) -> &Redstate {
+        match self {
+            Redstone::Torch { redstate, .. } => redstate,
+            Redstone::Dust { redstate, .. } => redstate,
+        }
+    }
+
     pub fn torch() -> RedstoneRef {
         Rc::new(RefCell::new(Redstone::Torch {
             incoming: None,
             outgoing: Vec::new(),
+            redstate: Redstate::new(),
         }))
     }
 
     pub fn dust() -> RedstoneRef {
-        Rc::new(RefCell::new(Redstone::Dust { edges: Vec::new() }))
+        Rc::new(RefCell::new(Redstone::Dust {
+            edges: Vec::new(),
+            redstate: Redstate::new(),
+        }))
     }
 }
 
 pub fn link(here: &RedstoneRef, there: &RedstoneRef) {
     match *here.borrow_mut() {
         Redstone::Torch {
-            ref mut incoming, ..
+            ref mut outgoing, ..
         } => {
-            assert!(Borrow::borrow(incoming).is_none());
-            *incoming = Some(Rc::clone(there));
+            assert!(outgoing.len() <= 5, "Torch can only connect up to 5 edges");
+            outgoing.push(Rc::clone(there));
         }
-        Redstone::Dust { ref mut edges } => {
+        Redstone::Dust { ref mut edges, .. } => {
             assert!(edges.len() <= 6, "Dust can only connect up to 6 edges");
             if !edges.contains(there) {
                 edges.push(Rc::clone(there));
@@ -56,12 +59,12 @@ pub fn link(here: &RedstoneRef, there: &RedstoneRef) {
 
     match *there.borrow_mut() {
         Redstone::Torch {
-            ref mut outgoing, ..
+            ref mut incoming, ..
         } => {
-            assert!(outgoing.len() <= 5, "Torch can only connect up to 5 edges");
-            outgoing.push(Rc::clone(here));
+            assert!(Borrow::borrow(incoming).is_none());
+            *incoming = Some(Rc::clone(here));
         }
-        Redstone::Dust { ref mut edges } => {
+        Redstone::Dust { ref mut edges, .. } => {
             assert!(edges.len() <= 6, "Dust can only connect up to 6 edges");
             if !edges.contains(here) {
                 edges.push(Rc::clone(here));
