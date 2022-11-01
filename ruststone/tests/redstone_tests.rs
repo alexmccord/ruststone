@@ -199,3 +199,76 @@ fn and_gate() {
     assert!(and_r.borrow().redstate().is_off());
     assert!(output.borrow().redstate().is_on());
 }
+
+#[test]
+fn and_gate_with_one_arm_off() {
+    let input_r = Redstone::torch();
+    let and_l = Redstone::torch();
+    let and_r = Redstone::torch();
+    let output = Redstone::torch();
+
+    let dust_l = Redstone::dust();
+    let dust_m = Redstone::dust();
+    let dust_r = Redstone::dust();
+
+    let block_l = Redstone::normal_block();
+    let block_m = Redstone::normal_block();
+    let block_r = Redstone::normal_block();
+
+    ruststone::link(&dust_l, &block_l);
+    ruststone::link(&block_l, &and_l);
+
+    ruststone::link(&input_r, &dust_r);
+    ruststone::link(&dust_r, &block_r);
+    ruststone::link(&block_r, &and_r);
+
+    ruststone::link(&and_l, &dust_m);
+    ruststone::link(&and_r, &dust_m);
+    ruststone::link(&dust_m, &block_m);
+
+    ruststone::link(&block_m, &output);
+
+    let cg = ConstraintGraph::collect(output.clone());
+    assert_eq!(cg.len(), 4);
+    cg.solve_constraints();
+
+    assert!(input_r.borrow().redstate().is_on());
+    assert!(and_l.borrow().redstate().is_on());
+    assert!(and_r.borrow().redstate().is_off());
+    assert!(output.borrow().redstate().is_off());
+}
+
+#[test]
+fn and_gate_with_both_arms_off() {
+    let and_l = Redstone::torch();
+    let and_r = Redstone::torch();
+    let output = Redstone::torch();
+
+    let dust_l = Redstone::dust();
+    let dust_m = Redstone::dust();
+    let dust_r = Redstone::dust();
+
+    let block_l = Redstone::normal_block();
+    let block_m = Redstone::normal_block();
+    let block_r = Redstone::normal_block();
+
+    ruststone::link(&dust_l, &block_l);
+    ruststone::link(&block_l, &and_l);
+
+    ruststone::link(&dust_r, &block_r);
+    ruststone::link(&block_r, &and_r);
+
+    ruststone::link(&and_l, &dust_m);
+    ruststone::link(&and_r, &dust_m);
+    ruststone::link(&dust_m, &block_m);
+
+    ruststone::link(&block_m, &output);
+
+    let cg = ConstraintGraph::collect(output.clone());
+    assert_eq!(cg.len(), 3);
+    cg.solve_constraints();
+
+    assert!(and_l.borrow().redstate().is_on());
+    assert!(and_r.borrow().redstate().is_on());
+    assert!(output.borrow().redstate().is_off());
+}
