@@ -1,4 +1,4 @@
-use std::{borrow::Borrow, cell::RefCell, rc::Rc};
+use std::{cell::RefCell, rc::Rc};
 
 use crate::Redstate;
 
@@ -12,11 +12,13 @@ pub enum Redstone {
         redstate: Redstate,
     },
     Dust {
-        edges: Vec<RedstoneRef>,
+        incoming: Vec<RedstoneRef>,
+        outgoing: Vec<RedstoneRef>,
         redstate: Redstate,
     },
     NormalBlock {
-        edges: Vec<RedstoneRef>,
+        incoming: Vec<RedstoneRef>,
+        outgoing: Vec<RedstoneRef>,
         redstate: Redstate,
     },
 }
@@ -40,14 +42,16 @@ impl Redstone {
 
     pub fn dust() -> RedstoneRef {
         Rc::new(RefCell::new(Redstone::Dust {
-            edges: Vec::new(),
+            incoming: Vec::new(),
+            outgoing: Vec::new(),
             redstate: Redstate::new(),
         }))
     }
 
     pub fn normal_block() -> RedstoneRef {
         Rc::new(RefCell::new(Redstone::NormalBlock {
-            edges: Vec::new(),
+            incoming: Vec::new(),
+            outgoing: Vec::new(),
             redstate: Redstate::new(),
         }))
     }
@@ -61,16 +65,20 @@ pub fn link(here: &RedstoneRef, there: &RedstoneRef) {
             assert!(outgoing.len() <= 5, "Torch can only connect up to 5 edges");
             outgoing.push(Rc::clone(there));
         }
-        Redstone::Dust { ref mut edges, .. } => {
-            assert!(edges.len() <= 6, "Dust can only connect up to 6 edges");
-            edges.push(Rc::clone(there));
+        Redstone::Dust {
+            ref mut outgoing, ..
+        } => {
+            assert!(outgoing.len() <= 6, "Dust can only connect up to 6 edges");
+            outgoing.push(Rc::clone(there));
         }
-        Redstone::NormalBlock { ref mut edges, .. } => {
-            assert!(edges.len() <= 6, "Dust can only connect up to 6 edges");
+        Redstone::NormalBlock {
+            ref mut outgoing, ..
+        } => {
+            assert!(outgoing.len() <= 6, "Dust can only connect up to 6 edges");
             if let Redstone::NormalBlock { .. } = *there.as_ref().borrow() {
-                panic!("NormalBlock cannot accept another NormalBlock as an incoming edge");
+                panic!("NormalBlock cannot accept another NormalBlock as an outgoing edge");
             }
-            edges.push(Rc::clone(there));
+            outgoing.push(Rc::clone(there));
         }
     }
 
@@ -78,22 +86,26 @@ pub fn link(here: &RedstoneRef, there: &RedstoneRef) {
         Redstone::Torch {
             ref mut incoming, ..
         } => {
-            assert!(Borrow::borrow(incoming).is_none());
+            assert!(incoming.is_none());
             *incoming = Some(Rc::clone(here));
         }
-        Redstone::Dust { ref mut edges, .. } => {
-            assert!(edges.len() <= 6, "Dust can only connect up to 6 edges");
-            edges.push(Rc::clone(here));
+        Redstone::Dust {
+            ref mut incoming, ..
+        } => {
+            assert!(incoming.len() <= 6, "Dust can only connect up to 6 edges");
+            incoming.push(Rc::clone(here));
         }
-        Redstone::NormalBlock { ref mut edges, .. } => {
+        Redstone::NormalBlock {
+            ref mut incoming, ..
+        } => {
             assert!(
-                edges.len() <= 6,
+                incoming.len() <= 6,
                 "NormalBlock can only connect up to 6 edges"
             );
             if let Redstone::NormalBlock { .. } = *here.as_ref().borrow() {
                 panic!("NormalBlock cannot accept another NormalBlock as an incoming edge");
             }
-            edges.push(Rc::clone(here));
+            incoming.push(Rc::clone(here));
         }
     }
 }

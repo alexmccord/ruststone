@@ -158,3 +158,44 @@ fn torch_and_dust_and_block_and_dust() {
     assert!(normal_block.borrow().redstate().is_forced());
     assert_eq!(dust2.borrow().redstate().get_power(), 0);
 }
+
+#[test]
+fn and_gate() {
+    let input_l = Redstone::torch();
+    let input_r = Redstone::torch();
+    let and_l = Redstone::torch();
+    let and_r = Redstone::torch();
+    let output = Redstone::torch();
+
+    let dust_l = Redstone::dust();
+    let dust_m = Redstone::dust();
+    let dust_r = Redstone::dust();
+
+    let block_l = Redstone::normal_block();
+    let block_m = Redstone::normal_block();
+    let block_r = Redstone::normal_block();
+
+    ruststone::link(&input_l, &dust_l);
+    ruststone::link(&dust_l, &block_l);
+    ruststone::link(&block_l, &and_l);
+
+    ruststone::link(&input_r, &dust_r);
+    ruststone::link(&dust_r, &block_r);
+    ruststone::link(&block_r, &and_r);
+
+    ruststone::link(&and_l, &dust_m);
+    ruststone::link(&and_r, &dust_m);
+    ruststone::link(&dust_m, &block_m);
+
+    ruststone::link(&block_m, &output);
+
+    let cg = ConstraintGraph::collect(output.clone());
+    assert_eq!(cg.len(), 5);
+    cg.solve_constraints();
+
+    assert!(input_l.borrow().redstate().is_on());
+    assert!(input_r.borrow().redstate().is_on());
+    assert!(and_l.borrow().redstate().is_off());
+    assert!(and_r.borrow().redstate().is_off());
+    assert!(output.borrow().redstate().is_on());
+}

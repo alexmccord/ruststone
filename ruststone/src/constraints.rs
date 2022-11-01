@@ -66,13 +66,15 @@ impl Constraint {
                 }
             }
             Redstone::Dust {
-                ref edges,
+                ref incoming,
+                ref outgoing,
                 ref redstate,
             } => {
                 // A Dust having no edges is disjoint, so it can't
                 // possibly have reached this point by now.
-                let max = edges
+                let max = incoming
                     .iter()
+                    .chain(outgoing.iter())
                     .map(|r| r.borrow().redstate().clone())
                     .filter(|r| r.updated_frame() == Some(current_frame))
                     .max_by_key(|r| r.get_power())
@@ -80,27 +82,26 @@ impl Constraint {
 
                 redstate.set_power(max.get_power().saturating_sub(1), current_frame);
 
-                for edge in edges {
-                    if edge.borrow().redstate().get_power() < redstate.get_power() {
-                        extra.push(Constraint::new(edge.clone(), Some(self.redstone.clone())))
+                for out in outgoing {
+                    if !self.is_created_by(out) {
+                        extra.push(Constraint::new(out.clone(), Some(self.redstone.clone())))
                     }
                 }
             }
             Redstone::NormalBlock {
-                ref edges,
+                ref incoming,
+                ref outgoing,
                 ref redstate,
             } => {
-                if edges.iter().any(|r| r.borrow().redstate().is_on()) {
-                    redstate.set_forced(true, current_frame)
-                }
+                let has_power = incoming.iter().any(|r| r.borrow().redstate().is_on());
+                let is_forced = incoming.iter().any(|r| r.borrow().redstate().is_forced());
 
-                if edges.iter().any(|r| r.borrow().redstate().is_forced()) {
-                    redstate.set_power(16, current_frame);
-                }
+                redstate.set_forced(has_power, current_frame);
+                redstate.set_power(if is_forced { 16 } else { 0 }, current_frame);
 
-                for edge in edges {
-                    if !self.is_created_by(edge) {
-                        extra.push(Constraint::new(edge.clone(), Some(self.redstone.clone())));
+                for out in outgoing {
+                    if !self.is_created_by(out) {
+                        extra.push(Constraint::new(out.clone(), Some(self.redstone.clone())));
                     }
                 }
             }
@@ -165,14 +166,30 @@ impl ConstraintGraph {
                         discovery_queue.push_front(redstone_cell.clone());
                     }
                 }
-                Redstone::Dust { ref edges, .. } => {
-                    for edge in edges {
-                        discovery_queue.push_front(edge.clone());
+                Redstone::Dust {
+                    ref incoming,
+                    ref outgoing,
+                    ..
+                } => {
+                    for incoming in incoming {
+                        discovery_queue.push_front(incoming.clone());
+                    }
+
+                    for outgoing in outgoing {
+                        discovery_queue.push_front(outgoing.clone());
                     }
                 }
-                Redstone::NormalBlock { ref edges, .. } => {
-                    for edge in edges {
-                        discovery_queue.push_front(edge.clone());
+                Redstone::NormalBlock {
+                    ref incoming,
+                    ref outgoing,
+                    ..
+                } => {
+                    for incoming in incoming {
+                        discovery_queue.push_front(incoming.clone());
+                    }
+
+                    for outgoing in outgoing {
+                        discovery_queue.push_front(outgoing.clone());
                     }
                 }
             }
