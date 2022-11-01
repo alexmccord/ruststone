@@ -92,7 +92,10 @@ pub fn link(here: &RedstoneRef, there: &RedstoneRef) {
             }
         }
         Redstone::NormalBlock { ref mut edges, .. } => {
-            assert!(edges.len() <= 6, "NormalBlock can only connect up to 6 edges");
+            assert!(
+                edges.len() <= 6,
+                "NormalBlock can only connect up to 6 edges"
+            );
             if let Redstone::NormalBlock { .. } = *here.as_ref().borrow() {
                 panic!("NormalBlock cannot accept another NormalBlock as an incoming edge");
             }

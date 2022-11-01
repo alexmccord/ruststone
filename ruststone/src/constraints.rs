@@ -88,7 +88,7 @@ impl Constraint {
             }
             Redstone::NormalBlock {
                 ref edges,
-                ref redstate
+                ref redstate,
             } => {
                 if edges.iter().any(|r| r.borrow().redstate().is_on()) {
                     redstate.set_forced(true, current_frame)
