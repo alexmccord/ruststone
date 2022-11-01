@@ -4,21 +4,23 @@ use std::{
     rc::Rc,
 };
 
-use crate::{Frame, Redstate, Redstone, RedstoneRef};
+use crate::{Frame, Redstone, RedstoneRef};
 
 struct Constraint {
     // The next frame this constraint can be dispatched. If `None`, it's dispatchable right away.
     next_dispatch_frame: Cell<Option<Frame>>,
     dependencies: RefCell<Vec<Rc<Constraint>>>,
     redstone: RedstoneRef,
+    created_by: Option<RedstoneRef>,
 }
 
 impl Constraint {
-    fn new(redstone: RedstoneRef) -> Rc<Constraint> {
+    fn new(redstone: RedstoneRef, created_by: Option<RedstoneRef>) -> Rc<Constraint> {
         Rc::new(Constraint {
             next_dispatch_frame: Cell::new(None),
             dependencies: RefCell::new(Vec::new()),
             redstone,
+            created_by,
         })
     }
 
@@ -48,7 +50,7 @@ impl Constraint {
                 ref redstate,
             } => {
                 match incoming {
-                    Some(incoming) => redstate.set(
+                    Some(incoming) => redstate.set_power(
                         if incoming.borrow().redstate().is_on() {
                             0
                         } else {
@@ -56,11 +58,11 @@ impl Constraint {
                         },
                         current_frame,
                     ),
-                    None => redstate.set(16, current_frame),
+                    None => redstate.set_power(16, current_frame),
                 }
 
                 for out in outgoing {
-                    extra.push(Constraint::new(out.clone()))
+                    extra.push(Constraint::new(out.clone(), Some(self.redstone.clone())))
                 }
             }
             Redstone::Dust {
@@ -69,18 +71,36 @@ impl Constraint {
             } => {
                 // A Dust having no edges is disjoint, so it can't
                 // possibly have reached this point by now.
-                let max: Redstate = edges
+                let max = edges
                     .iter()
                     .map(|r| r.borrow().redstate().clone())
                     .filter(|r| r.updated_frame() == Some(current_frame))
-                    .max_by_key(|r| r.get())
+                    .max_by_key(|r| r.get_power())
                     .unwrap();
 
-                redstate.set(max.get().saturating_sub(1), current_frame);
+                redstate.set_power(max.get_power().saturating_sub(1), current_frame);
 
                 for edge in edges {
-                    if edge.borrow().redstate().get() < redstate.get() {
-                        extra.push(Constraint::new(edge.clone()))
+                    if edge.borrow().redstate().get_power() < redstate.get_power() {
+                        extra.push(Constraint::new(edge.clone(), Some(self.redstone.clone())))
+                    }
+                }
+            }
+            Redstone::NormalBlock {
+                ref edges,
+                ref redstate
+            } => {
+                if edges.iter().any(|r| r.borrow().redstate().is_on()) {
+                    redstate.set_forced(true, current_frame)
+                }
+
+                if edges.iter().any(|r| r.borrow().redstate().is_forced()) {
+                    redstate.set_power(16, current_frame);
+                }
+
+                for edge in edges {
+                    if !self.is_created_by(edge) {
+                        extra.push(Constraint::new(edge.clone(), Some(self.redstone.clone())));
                     }
                 }
             }
@@ -92,6 +112,13 @@ impl Constraint {
     fn depends_on(&self, constraints: &Vec<Rc<Constraint>>) {
         for c in constraints {
             self.dependencies.borrow_mut().push(c.clone());
+        }
+    }
+
+    fn is_created_by(&self, by: &RedstoneRef) -> bool {
+        match self.created_by {
+            Some(ref created_by) => Rc::as_ptr(created_by) == Rc::as_ptr(by),
+            None => false,
         }
     }
 }
@@ -143,6 +170,11 @@ impl ConstraintGraph {
                         discovery_queue.push_front(edge.clone());
                     }
                 }
+                Redstone::NormalBlock { ref edges, .. } => {
+                    for edge in edges {
+                        discovery_queue.push_front(edge.clone());
+                    }
+                }
             }
         }
 
@@ -160,7 +192,7 @@ impl ConstraintGraph {
                     ..
                 } => {
                     if let Some(deps) = symbols.get(&Rc::as_ptr(incoming)) {
-                        let c = Constraint::new(redstone.clone());
+                        let c = Constraint::new(redstone.clone(), None);
                         c.depends_on(deps);
                         symbols.insert(Rc::as_ptr(&redstone), vec![c]);
                     } else {
@@ -168,21 +200,24 @@ impl ConstraintGraph {
                     }
                 }
                 Redstone::Torch { incoming: None, .. } => {
-                    let c = Constraint::new(redstone.clone());
+                    let c = Constraint::new(redstone.clone(), None);
                     symbols.insert(Rc::as_ptr(&redstone), vec![c]);
                 }
                 Redstone::Dust { .. } => {
                     symbols.insert(Rc::as_ptr(&redstone), Vec::new());
                 }
+                Redstone::NormalBlock { .. } => {
+                    symbols.insert(Rc::as_ptr(&redstone), Vec::new());
+                }
             }
         }
 
-        let mut cgb = ConstraintGraph::new();
+        let mut cg = ConstraintGraph::new();
         for deps in symbols.values_mut() {
-            cgb.constraints.append(deps);
+            cg.constraints.append(deps);
         }
 
-        cgb
+        cg
     }
 
     pub fn len(&self) -> usize {

@@ -15,6 +15,10 @@ pub enum Redstone {
         edges: Vec<RedstoneRef>,
         redstate: Redstate,
     },
+    NormalBlock {
+        edges: Vec<RedstoneRef>,
+        redstate: Redstate,
+    },
 }
 
 impl Redstone {
@@ -22,6 +26,7 @@ impl Redstone {
         match self {
             Redstone::Torch { redstate, .. } => redstate,
             Redstone::Dust { redstate, .. } => redstate,
+            Redstone::NormalBlock { redstate, .. } => redstate,
         }
     }
 
@@ -35,6 +40,13 @@ impl Redstone {
 
     pub fn dust() -> RedstoneRef {
         Rc::new(RefCell::new(Redstone::Dust {
+            edges: Vec::new(),
+            redstate: Redstate::new(),
+        }))
+    }
+
+    pub fn normal_block() -> RedstoneRef {
+        Rc::new(RefCell::new(Redstone::NormalBlock {
             edges: Vec::new(),
             redstate: Redstate::new(),
         }))
@@ -55,6 +67,15 @@ pub fn link(here: &RedstoneRef, there: &RedstoneRef) {
                 edges.push(Rc::clone(there));
             }
         }
+        Redstone::NormalBlock { ref mut edges, .. } => {
+            assert!(edges.len() <= 6, "Dust can only connect up to 6 edges");
+            if let Redstone::NormalBlock { .. } = *there.as_ref().borrow() {
+                panic!("NormalBlock cannot accept another NormalBlock as an incoming edge");
+            }
+            if !edges.contains(there) {
+                edges.push(Rc::clone(there));
+            }
+        }
     }
 
     match *there.borrow_mut() {
@@ -66,6 +87,15 @@ pub fn link(here: &RedstoneRef, there: &RedstoneRef) {
         }
         Redstone::Dust { ref mut edges, .. } => {
             assert!(edges.len() <= 6, "Dust can only connect up to 6 edges");
+            if !edges.contains(here) {
+                edges.push(Rc::clone(here));
+            }
+        }
+        Redstone::NormalBlock { ref mut edges, .. } => {
+            assert!(edges.len() <= 6, "NormalBlock can only connect up to 6 edges");
+            if let Redstone::NormalBlock { .. } = *here.as_ref().borrow() {
+                panic!("NormalBlock cannot accept another NormalBlock as an incoming edge");
+            }
             if !edges.contains(here) {
                 edges.push(Rc::clone(here));
             }

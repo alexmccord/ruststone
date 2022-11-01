@@ -12,28 +12,39 @@ impl Frame {
 #[derive(Clone, PartialEq, Eq)]
 pub struct Redstate {
     updated_frame: Cell<Option<Frame>>,
-    state: Cell<u8>,
+    power: Cell<u8>,
+    forced: Cell<bool>,
 }
 
 impl Redstate {
     pub(crate) fn new() -> Redstate {
         Redstate {
             updated_frame: Cell::new(None),
-            state: Default::default(),
+            power: Cell::new(0),
+            forced: Cell::new(false),
         }
     }
 
-    pub fn get(&self) -> u8 {
-        self.state.get()
+    pub fn get_power(&self) -> u8 {
+        self.power.get()
     }
 
-    pub(crate) fn set(&self, val: u8, frame: Frame) {
+    pub fn is_forced(&self) -> bool {
+        self.forced.get()
+    }
+
+    pub(crate) fn set_power(&self, val: u8, frame: Frame) {
         self.updated_frame.set(Some(frame));
-        self.state.set(val);
+        self.power.set(val);
+    }
+
+    pub(crate) fn set_forced(&self, val: bool, frame: Frame) {
+        self.updated_frame.set(Some(frame));
+        self.forced.set(val);
     }
 
     pub fn is_on(&self) -> bool {
-        self.get() > 0
+        self.get_power() > 0 || self.forced.get()
     }
 
     pub fn is_off(&self) -> bool {
