@@ -63,18 +63,14 @@ pub fn link(here: &RedstoneRef, there: &RedstoneRef) {
         }
         Redstone::Dust { ref mut edges, .. } => {
             assert!(edges.len() <= 6, "Dust can only connect up to 6 edges");
-            if !edges.contains(there) {
-                edges.push(Rc::clone(there));
-            }
+            edges.push(Rc::clone(there));
         }
         Redstone::NormalBlock { ref mut edges, .. } => {
             assert!(edges.len() <= 6, "Dust can only connect up to 6 edges");
             if let Redstone::NormalBlock { .. } = *there.as_ref().borrow() {
                 panic!("NormalBlock cannot accept another NormalBlock as an incoming edge");
             }
-            if !edges.contains(there) {
-                edges.push(Rc::clone(there));
-            }
+            edges.push(Rc::clone(there));
         }
     }
 
@@ -87,9 +83,7 @@ pub fn link(here: &RedstoneRef, there: &RedstoneRef) {
         }
         Redstone::Dust { ref mut edges, .. } => {
             assert!(edges.len() <= 6, "Dust can only connect up to 6 edges");
-            if !edges.contains(here) {
-                edges.push(Rc::clone(here));
-            }
+            edges.push(Rc::clone(here));
         }
         Redstone::NormalBlock { ref mut edges, .. } => {
             assert!(
@@ -99,9 +93,7 @@ pub fn link(here: &RedstoneRef, there: &RedstoneRef) {
             if let Redstone::NormalBlock { .. } = *here.as_ref().borrow() {
                 panic!("NormalBlock cannot accept another NormalBlock as an incoming edge");
             }
-            if !edges.contains(here) {
-                edges.push(Rc::clone(here));
-            }
+            edges.push(Rc::clone(here));
         }
     }
 }
