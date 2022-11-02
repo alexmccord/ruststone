@@ -347,3 +347,216 @@ fn xor_gate() {
     assert!(torch_after_dust_inversion_r.borrow().redstate().is_off());
     assert!(output.borrow().redstate().is_off());
 }
+
+#[test]
+fn xor_gate_with_left_off() {
+    let input_dust_l = Redstone::dust("input_dust_l");
+    let dust_block_l = Redstone::normal_block("dust_block_l");
+    let torch_on_top_block_l = Redstone::torch("torch_on_top_block_l");
+    let torch_in_front_block_l = Redstone::torch("torch_in_front_block_l");
+    let dust_after_inversion_l = Redstone::dust("dust_after_inversion_l");
+    let dust_after_inversion_l2 = Redstone::dust("dust_after_inversion_l2");
+    let block_after_inversion_l = Redstone::normal_block("block_after_inversion_l");
+    let torch_after_dust_inversion_l = Redstone::torch("torch_after_dust_inversion_l");
+
+    ruststone::link(&input_dust_l, &dust_block_l);
+    ruststone::link(&dust_block_l, &torch_on_top_block_l);
+    ruststone::link(&dust_block_l, &torch_in_front_block_l);
+    ruststone::link(&torch_in_front_block_l, &dust_after_inversion_l);
+    ruststone::link(&dust_after_inversion_l, &dust_after_inversion_l2);
+    ruststone::link(&dust_after_inversion_l2, &block_after_inversion_l);
+    ruststone::link(&block_after_inversion_l, &torch_after_dust_inversion_l);
+
+    let input_r = Redstone::torch("input_r");
+    let input_dust_r = Redstone::dust("input_dust_r");
+    let dust_block_r = Redstone::normal_block("dust_block_r");
+    let torch_on_top_block_r = Redstone::torch("torch_on_top_block_r");
+    let torch_in_front_block_r = Redstone::torch("torch_in_front_block_r");
+    let dust_after_inversion_r = Redstone::dust("dust_after_inversion_r");
+    let dust_after_inversion_r2 = Redstone::dust("dust_after_inversion_r2");
+    let block_after_inversion_r = Redstone::normal_block("block_after_inversion_r");
+    let torch_after_dust_inversion_r = Redstone::torch("torch_after_dust_inversion_r");
+
+    ruststone::link(&input_r, &input_dust_r);
+    ruststone::link(&input_dust_r, &dust_block_r);
+    ruststone::link(&dust_block_r, &torch_on_top_block_r);
+    ruststone::link(&dust_block_r, &torch_in_front_block_r);
+    ruststone::link(&torch_in_front_block_r, &dust_after_inversion_r);
+    ruststone::link(&dust_after_inversion_r, &dust_after_inversion_r2);
+    ruststone::link(&dust_after_inversion_r2, &block_after_inversion_r);
+    ruststone::link(&block_after_inversion_r, &torch_after_dust_inversion_r);
+
+    let and_dust_1 = Redstone::dust("and_dust_1");
+    let and_dust_2 = Redstone::dust("and_dust_2");
+    let and_block = Redstone::normal_block("and_block");
+    let inversion_of_and = Redstone::torch("inversion_of_and");
+
+    ruststone::link(&torch_on_top_block_l, &and_dust_1);
+    ruststone::link(&torch_on_top_block_r, &and_dust_1);
+    ruststone::link(&and_dust_1, &and_dust_2);
+    ruststone::link(&and_dust_2, &and_block);
+    ruststone::link(&and_block, &inversion_of_and);
+
+    ruststone::link(&inversion_of_and, &dust_after_inversion_l);
+    ruststone::link(&inversion_of_and, &dust_after_inversion_r);
+
+    let output = Redstone::dust("output");
+
+    ruststone::link(&torch_after_dust_inversion_l, &output);
+    ruststone::link(&torch_after_dust_inversion_r, &output);
+
+    let cg = ConstraintGraph::collect(output.clone());
+    assert_eq!(cg.len(), 8);
+    cg.solve_constraints();
+
+    assert!(input_r.borrow().redstate().is_on());
+    assert!(torch_on_top_block_l.borrow().redstate().is_on());
+    assert!(torch_on_top_block_r.borrow().redstate().is_off());
+    assert!(torch_in_front_block_l.borrow().redstate().is_on());
+    assert!(torch_in_front_block_r.borrow().redstate().is_off());
+    assert!(inversion_of_and.borrow().redstate().is_off());
+    assert!(torch_after_dust_inversion_l.borrow().redstate().is_off());
+    assert!(torch_after_dust_inversion_r.borrow().redstate().is_on());
+    assert!(output.borrow().redstate().is_on());
+}
+
+#[test]
+fn xor_gate_with_right_off() {
+    let input_l = Redstone::torch("input_l");
+    let input_dust_l = Redstone::dust("input_dust_l");
+    let dust_block_l = Redstone::normal_block("dust_block_l");
+    let torch_on_top_block_l = Redstone::torch("torch_on_top_block_l");
+    let torch_in_front_block_l = Redstone::torch("torch_in_front_block_l");
+    let dust_after_inversion_l = Redstone::dust("dust_after_inversion_l");
+    let dust_after_inversion_l2 = Redstone::dust("dust_after_inversion_l2");
+    let block_after_inversion_l = Redstone::normal_block("block_after_inversion_l");
+    let torch_after_dust_inversion_l = Redstone::torch("torch_after_dust_inversion_l");
+
+    ruststone::link(&input_l, &input_dust_l);
+    ruststone::link(&input_dust_l, &dust_block_l);
+    ruststone::link(&dust_block_l, &torch_on_top_block_l);
+    ruststone::link(&dust_block_l, &torch_in_front_block_l);
+    ruststone::link(&torch_in_front_block_l, &dust_after_inversion_l);
+    ruststone::link(&dust_after_inversion_l, &dust_after_inversion_l2);
+    ruststone::link(&dust_after_inversion_l2, &block_after_inversion_l);
+    ruststone::link(&block_after_inversion_l, &torch_after_dust_inversion_l);
+
+    let input_dust_r = Redstone::dust("input_dust_r");
+    let dust_block_r = Redstone::normal_block("dust_block_r");
+    let torch_on_top_block_r = Redstone::torch("torch_on_top_block_r");
+    let torch_in_front_block_r = Redstone::torch("torch_in_front_block_r");
+    let dust_after_inversion_r = Redstone::dust("dust_after_inversion_r");
+    let dust_after_inversion_r2 = Redstone::dust("dust_after_inversion_r2");
+    let block_after_inversion_r = Redstone::normal_block("block_after_inversion_r");
+    let torch_after_dust_inversion_r = Redstone::torch("torch_after_dust_inversion_r");
+
+    ruststone::link(&input_dust_r, &dust_block_r);
+    ruststone::link(&dust_block_r, &torch_on_top_block_r);
+    ruststone::link(&dust_block_r, &torch_in_front_block_r);
+    ruststone::link(&torch_in_front_block_r, &dust_after_inversion_r);
+    ruststone::link(&dust_after_inversion_r, &dust_after_inversion_r2);
+    ruststone::link(&dust_after_inversion_r2, &block_after_inversion_r);
+    ruststone::link(&block_after_inversion_r, &torch_after_dust_inversion_r);
+
+    let and_dust_1 = Redstone::dust("and_dust_1");
+    let and_dust_2 = Redstone::dust("and_dust_2");
+    let and_block = Redstone::normal_block("and_block");
+    let inversion_of_and = Redstone::torch("inversion_of_and");
+
+    ruststone::link(&torch_on_top_block_l, &and_dust_1);
+    ruststone::link(&torch_on_top_block_r, &and_dust_1);
+    ruststone::link(&and_dust_1, &and_dust_2);
+    ruststone::link(&and_dust_2, &and_block);
+    ruststone::link(&and_block, &inversion_of_and);
+
+    ruststone::link(&inversion_of_and, &dust_after_inversion_l);
+    ruststone::link(&inversion_of_and, &dust_after_inversion_r);
+
+    let output = Redstone::dust("output");
+
+    ruststone::link(&torch_after_dust_inversion_l, &output);
+    ruststone::link(&torch_after_dust_inversion_r, &output);
+
+    let cg = ConstraintGraph::collect(output.clone());
+    assert_eq!(cg.len(), 8);
+    cg.solve_constraints();
+
+    assert!(input_l.borrow().redstate().is_on());
+    assert!(torch_on_top_block_l.borrow().redstate().is_off());
+    assert!(torch_on_top_block_r.borrow().redstate().is_on());
+    assert!(torch_in_front_block_l.borrow().redstate().is_off());
+    assert!(torch_in_front_block_r.borrow().redstate().is_on());
+    assert!(inversion_of_and.borrow().redstate().is_off());
+    assert!(torch_after_dust_inversion_l.borrow().redstate().is_on());
+    assert!(torch_after_dust_inversion_r.borrow().redstate().is_off());
+    assert!(output.borrow().redstate().is_on());
+}
+
+#[test]
+fn xor_gate_with_both_off() {
+    let input_dust_l = Redstone::dust("input_dust_l");
+    let dust_block_l = Redstone::normal_block("dust_block_l");
+    let torch_on_top_block_l = Redstone::torch("torch_on_top_block_l");
+    let torch_in_front_block_l = Redstone::torch("torch_in_front_block_l");
+    let dust_after_inversion_l = Redstone::dust("dust_after_inversion_l");
+    let dust_after_inversion_l2 = Redstone::dust("dust_after_inversion_l2");
+    let block_after_inversion_l = Redstone::normal_block("block_after_inversion_l");
+    let torch_after_dust_inversion_l = Redstone::torch("torch_after_dust_inversion_l");
+
+    ruststone::link(&input_dust_l, &dust_block_l);
+    ruststone::link(&dust_block_l, &torch_on_top_block_l);
+    ruststone::link(&dust_block_l, &torch_in_front_block_l);
+    ruststone::link(&torch_in_front_block_l, &dust_after_inversion_l);
+    ruststone::link(&dust_after_inversion_l, &dust_after_inversion_l2);
+    ruststone::link(&dust_after_inversion_l2, &block_after_inversion_l);
+    ruststone::link(&block_after_inversion_l, &torch_after_dust_inversion_l);
+
+    let input_dust_r = Redstone::dust("input_dust_r");
+    let dust_block_r = Redstone::normal_block("dust_block_r");
+    let torch_on_top_block_r = Redstone::torch("torch_on_top_block_r");
+    let torch_in_front_block_r = Redstone::torch("torch_in_front_block_r");
+    let dust_after_inversion_r = Redstone::dust("dust_after_inversion_r");
+    let dust_after_inversion_r2 = Redstone::dust("dust_after_inversion_r2");
+    let block_after_inversion_r = Redstone::normal_block("block_after_inversion_r");
+    let torch_after_dust_inversion_r = Redstone::torch("torch_after_dust_inversion_r");
+
+    ruststone::link(&input_dust_r, &dust_block_r);
+    ruststone::link(&dust_block_r, &torch_on_top_block_r);
+    ruststone::link(&dust_block_r, &torch_in_front_block_r);
+    ruststone::link(&torch_in_front_block_r, &dust_after_inversion_r);
+    ruststone::link(&dust_after_inversion_r, &dust_after_inversion_r2);
+    ruststone::link(&dust_after_inversion_r2, &block_after_inversion_r);
+    ruststone::link(&block_after_inversion_r, &torch_after_dust_inversion_r);
+
+    let and_dust_1 = Redstone::dust("and_dust_1");
+    let and_dust_2 = Redstone::dust("and_dust_2");
+    let and_block = Redstone::normal_block("and_block");
+    let inversion_of_and = Redstone::torch("inversion_of_and");
+
+    ruststone::link(&torch_on_top_block_l, &and_dust_1);
+    ruststone::link(&torch_on_top_block_r, &and_dust_1);
+    ruststone::link(&and_dust_1, &and_dust_2);
+    ruststone::link(&and_dust_2, &and_block);
+    ruststone::link(&and_block, &inversion_of_and);
+
+    ruststone::link(&inversion_of_and, &dust_after_inversion_l);
+    ruststone::link(&inversion_of_and, &dust_after_inversion_r);
+
+    let output = Redstone::dust("output");
+
+    ruststone::link(&torch_after_dust_inversion_l, &output);
+    ruststone::link(&torch_after_dust_inversion_r, &output);
+
+    let cg = ConstraintGraph::collect(output.clone());
+    assert_eq!(cg.len(), 7);
+    cg.solve_constraints();
+
+    assert!(torch_on_top_block_l.borrow().redstate().is_on());
+    assert!(torch_on_top_block_r.borrow().redstate().is_on());
+    assert!(torch_in_front_block_l.borrow().redstate().is_on());
+    assert!(torch_in_front_block_r.borrow().redstate().is_on());
+    assert!(inversion_of_and.borrow().redstate().is_off());
+    assert!(torch_after_dust_inversion_l.borrow().redstate().is_off());
+    assert!(torch_after_dust_inversion_r.borrow().redstate().is_off());
+    assert!(output.borrow().redstate().is_off());
+}
