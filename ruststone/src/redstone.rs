@@ -7,16 +7,19 @@ pub(crate) type RedstoneRef = Rc<RefCell<Redstone>>;
 #[derive(Clone, PartialEq, Eq)]
 pub enum Redstone {
     Torch {
+        name: String,
         incoming: Option<RedstoneRef>,
         outgoing: Vec<RedstoneRef>,
         redstate: Redstate,
     },
     Dust {
+        name: String,
         incoming: Vec<RedstoneRef>,
         outgoing: Vec<RedstoneRef>,
         redstate: Redstate,
     },
     NormalBlock {
+        name: String,
         incoming: Vec<RedstoneRef>,
         outgoing: Vec<RedstoneRef>,
         redstate: Redstate,
@@ -24,6 +27,14 @@ pub enum Redstone {
 }
 
 impl Redstone {
+    pub fn name(&self) -> String {
+        match self {
+            Redstone::Dust { name, .. } => name.clone(),
+            Redstone::Torch { name, .. } => name.clone(),
+            Redstone::NormalBlock { name, .. } => name.clone(),
+        }
+    }
+
     pub fn redstate(&self) -> &Redstate {
         match self {
             Redstone::Torch { redstate, .. } => redstate,
@@ -32,24 +43,27 @@ impl Redstone {
         }
     }
 
-    pub fn torch() -> RedstoneRef {
+    pub fn torch(name: &str) -> RedstoneRef {
         Rc::new(RefCell::new(Redstone::Torch {
+            name: String::from(name),
             incoming: None,
             outgoing: Vec::new(),
             redstate: Redstate::new(),
         }))
     }
 
-    pub fn dust() -> RedstoneRef {
+    pub fn dust(name: &str) -> RedstoneRef {
         Rc::new(RefCell::new(Redstone::Dust {
+            name: String::from(name),
             incoming: Vec::new(),
             outgoing: Vec::new(),
             redstate: Redstate::new(),
         }))
     }
 
-    pub fn normal_block() -> RedstoneRef {
+    pub fn normal_block(name: &str) -> RedstoneRef {
         Rc::new(RefCell::new(Redstone::NormalBlock {
+            name: String::from(name),
             incoming: Vec::new(),
             outgoing: Vec::new(),
             redstate: Redstate::new(),

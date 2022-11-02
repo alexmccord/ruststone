@@ -2,8 +2,8 @@ use ruststone::{ConstraintGraph, Redstone};
 
 #[test]
 fn torch_and_dust() {
-    let torch = Redstone::torch();
-    let dust = Redstone::dust();
+    let torch = Redstone::torch("torch");
+    let dust = Redstone::dust("dust");
 
     ruststone::link(&torch, &dust);
 
@@ -17,10 +17,10 @@ fn torch_and_dust() {
 
 #[test]
 fn torch_and_dust_and_dust_and_dust() {
-    let torch = Redstone::torch();
-    let dust1 = Redstone::dust();
-    let dust2 = Redstone::dust();
-    let dust3 = Redstone::dust();
+    let torch = Redstone::torch("torch");
+    let dust1 = Redstone::dust("dust1");
+    let dust2 = Redstone::dust("dust2");
+    let dust3 = Redstone::dust("dust3");
 
     ruststone::link(&torch, &dust1);
     ruststone::link(&dust1, &dust2);
@@ -38,24 +38,24 @@ fn torch_and_dust_and_dust_and_dust() {
 
 #[test]
 fn torch_and_dust_until_it_runs_out_of_redpower() {
-    let torch = Redstone::torch();
-    let dust1 = Redstone::dust();
-    let dust2 = Redstone::dust();
-    let dust3 = Redstone::dust();
-    let dust4 = Redstone::dust();
-    let dust5 = Redstone::dust();
-    let dust6 = Redstone::dust();
-    let dust7 = Redstone::dust();
-    let dust8 = Redstone::dust();
-    let dust9 = Redstone::dust();
-    let dust10 = Redstone::dust();
-    let dust11 = Redstone::dust();
-    let dust12 = Redstone::dust();
-    let dust13 = Redstone::dust();
-    let dust14 = Redstone::dust();
-    let dust15 = Redstone::dust();
-    let dust16 = Redstone::dust();
-    let dust17 = Redstone::dust();
+    let torch = Redstone::torch("torch");
+    let dust1 = Redstone::dust("dust1");
+    let dust2 = Redstone::dust("dust2");
+    let dust3 = Redstone::dust("dust3");
+    let dust4 = Redstone::dust("dust4");
+    let dust5 = Redstone::dust("dust5");
+    let dust6 = Redstone::dust("dust6");
+    let dust7 = Redstone::dust("dust7");
+    let dust8 = Redstone::dust("dust8");
+    let dust9 = Redstone::dust("dust9");
+    let dust10 = Redstone::dust("dust10");
+    let dust11 = Redstone::dust("dust11");
+    let dust12 = Redstone::dust("dust12");
+    let dust13 = Redstone::dust("dust13");
+    let dust14 = Redstone::dust("dust14");
+    let dust15 = Redstone::dust("dust15");
+    let dust16 = Redstone::dust("dust16");
+    let dust17 = Redstone::dust("dust17");
 
     ruststone::link(&torch, &dust1);
     ruststone::link(&dust1, &dust2);
@@ -87,13 +87,13 @@ fn torch_and_dust_until_it_runs_out_of_redpower() {
 
 #[test]
 fn dust_in_the_middle_of_two_torches() {
-    let torch_l = Redstone::torch();
-    let dust1 = Redstone::dust();
-    let dust2 = Redstone::dust();
-    let dust3 = Redstone::dust();
-    let dust4 = Redstone::dust();
-    let dust5 = Redstone::dust();
-    let torch_r = Redstone::torch();
+    let torch_l = Redstone::torch("torch_l");
+    let dust1 = Redstone::dust("dust1");
+    let dust2 = Redstone::dust("dust2");
+    let dust3 = Redstone::dust("dust3");
+    let dust4 = Redstone::dust("dust4");
+    let dust5 = Redstone::dust("dust5");
+    let torch_r = Redstone::torch("torch_r");
 
     ruststone::link(&torch_l, &dust1);
     ruststone::link(&dust1, &dust2);
@@ -117,10 +117,10 @@ fn dust_in_the_middle_of_two_torches() {
 
 #[test]
 fn torch_is_off_if_its_incoming_edge_is_on() {
-    let torch = Redstone::torch();
-    let dust = Redstone::dust();
-    let normal_block = Redstone::normal_block();
-    let output = Redstone::torch();
+    let torch = Redstone::torch("torch");
+    let dust = Redstone::dust("dust");
+    let normal_block = Redstone::normal_block("normal_block");
+    let output = Redstone::torch("output");
 
     ruststone::link(&torch, &dust);
     ruststone::link(&dust, &normal_block);
@@ -139,10 +139,10 @@ fn torch_is_off_if_its_incoming_edge_is_on() {
 
 #[test]
 fn torch_and_dust_and_block_and_dust() {
-    let torch = Redstone::torch();
-    let dust1 = Redstone::dust();
-    let normal_block = Redstone::normal_block();
-    let dust2 = Redstone::dust();
+    let torch = Redstone::torch("torch");
+    let dust1 = Redstone::dust("dust1");
+    let normal_block = Redstone::normal_block("normal_block");
+    let dust2 = Redstone::dust("dust2");
 
     ruststone::link(&torch, &dust1);
     ruststone::link(&dust1, &normal_block);
@@ -161,19 +161,19 @@ fn torch_and_dust_and_block_and_dust() {
 
 #[test]
 fn and_gate() {
-    let input_l = Redstone::torch();
-    let input_r = Redstone::torch();
-    let and_l = Redstone::torch();
-    let and_r = Redstone::torch();
-    let output = Redstone::torch();
+    let input_l = Redstone::torch("input_l");
+    let input_r = Redstone::torch("input_r");
+    let and_l = Redstone::torch("and_l");
+    let and_r = Redstone::torch("and_r");
+    let output = Redstone::torch("output");
 
-    let dust_l = Redstone::dust();
-    let dust_m = Redstone::dust();
-    let dust_r = Redstone::dust();
+    let dust_l = Redstone::dust("dust_l");
+    let dust_m = Redstone::dust("dust_m");
+    let dust_r = Redstone::dust("dust_r");
 
-    let block_l = Redstone::normal_block();
-    let block_m = Redstone::normal_block();
-    let block_r = Redstone::normal_block();
+    let block_l = Redstone::normal_block("block_l");
+    let block_m = Redstone::normal_block("block_m");
+    let block_r = Redstone::normal_block("block_r");
 
     ruststone::link(&input_l, &dust_l);
     ruststone::link(&dust_l, &block_l);
@@ -202,18 +202,18 @@ fn and_gate() {
 
 #[test]
 fn and_gate_with_one_arm_off() {
-    let input_r = Redstone::torch();
-    let and_l = Redstone::torch();
-    let and_r = Redstone::torch();
-    let output = Redstone::torch();
+    let input_r = Redstone::torch("input_r");
+    let and_l = Redstone::torch("and_l");
+    let and_r = Redstone::torch("and_r");
+    let output = Redstone::torch("output");
 
-    let dust_l = Redstone::dust();
-    let dust_m = Redstone::dust();
-    let dust_r = Redstone::dust();
+    let dust_l = Redstone::dust("dust_l");
+    let dust_m = Redstone::dust("dust_m");
+    let dust_r = Redstone::dust("dust_r");
 
-    let block_l = Redstone::normal_block();
-    let block_m = Redstone::normal_block();
-    let block_r = Redstone::normal_block();
+    let block_l = Redstone::normal_block("block_l");
+    let block_m = Redstone::normal_block("block_m");
+    let block_r = Redstone::normal_block("block_r");
 
     ruststone::link(&dust_l, &block_l);
     ruststone::link(&block_l, &and_l);
@@ -240,17 +240,17 @@ fn and_gate_with_one_arm_off() {
 
 #[test]
 fn and_gate_with_both_arms_off() {
-    let and_l = Redstone::torch();
-    let and_r = Redstone::torch();
-    let output = Redstone::torch();
+    let and_l = Redstone::torch("and_l");
+    let and_r = Redstone::torch("and_r");
+    let output = Redstone::torch("output");
 
-    let dust_l = Redstone::dust();
-    let dust_m = Redstone::dust();
-    let dust_r = Redstone::dust();
+    let dust_l = Redstone::dust("dust_l");
+    let dust_m = Redstone::dust("dust_m");
+    let dust_r = Redstone::dust("dust_r");
 
-    let block_l = Redstone::normal_block();
-    let block_m = Redstone::normal_block();
-    let block_r = Redstone::normal_block();
+    let block_l = Redstone::normal_block("block_l");
+    let block_m = Redstone::normal_block("block_m");
+    let block_r = Redstone::normal_block("block_r");
 
     ruststone::link(&dust_l, &block_l);
     ruststone::link(&block_l, &and_l);
@@ -275,14 +275,15 @@ fn and_gate_with_both_arms_off() {
 
 #[test]
 fn xor_gate() {
-    let input_l = Redstone::torch();
-    let input_dust_l = Redstone::dust();
-    let dust_block_l = Redstone::normal_block();
-    let torch_on_top_block_l = Redstone::torch();
-    let torch_in_front_block_l = Redstone::torch();
-    let dust_after_inversion_l = Redstone::dust();
-    let dust_after_inversion_l2 = Redstone::dust();
-    let torch_after_dust_inversion_l = Redstone::torch();
+    let input_l = Redstone::torch("input_l");
+    let input_dust_l = Redstone::dust("input_dust_l");
+    let dust_block_l = Redstone::normal_block("dust_block_l");
+    let torch_on_top_block_l = Redstone::torch("torch_on_top_block_l");
+    let torch_in_front_block_l = Redstone::torch("torch_in_front_block_l");
+    let dust_after_inversion_l = Redstone::dust("dust_after_inversion_l");
+    let dust_after_inversion_l2 = Redstone::dust("dust_after_inversion_l2");
+    let block_after_inversion_l = Redstone::normal_block("block_after_inversion_l");
+    let torch_after_dust_inversion_l = Redstone::torch("torch_after_dust_inversion_l");
 
     ruststone::link(&input_l, &input_dust_l);
     ruststone::link(&input_dust_l, &dust_block_l);
@@ -290,16 +291,18 @@ fn xor_gate() {
     ruststone::link(&dust_block_l, &torch_in_front_block_l);
     ruststone::link(&torch_in_front_block_l, &dust_after_inversion_l);
     ruststone::link(&dust_after_inversion_l, &dust_after_inversion_l2);
-    ruststone::link(&dust_after_inversion_l2, &torch_after_dust_inversion_l);
+    ruststone::link(&dust_after_inversion_l2, &block_after_inversion_l);
+    ruststone::link(&block_after_inversion_l, &torch_after_dust_inversion_l);
 
-    let input_r = Redstone::torch();
-    let input_dust_r = Redstone::dust();
-    let dust_block_r = Redstone::normal_block();
-    let torch_on_top_block_r = Redstone::torch();
-    let torch_in_front_block_r = Redstone::torch();
-    let dust_after_inversion_r = Redstone::dust();
-    let dust_after_inversion_r2 = Redstone::dust();
-    let torch_after_dust_inversion_r = Redstone::torch();
+    let input_r = Redstone::torch("input_r");
+    let input_dust_r = Redstone::dust("input_dust_r");
+    let dust_block_r = Redstone::normal_block("dust_block_r");
+    let torch_on_top_block_r = Redstone::torch("torch_on_top_block_r");
+    let torch_in_front_block_r = Redstone::torch("torch_in_front_block_r");
+    let dust_after_inversion_r = Redstone::dust("dust_after_inversion_r");
+    let dust_after_inversion_r2 = Redstone::dust("dust_after_inversion_r2");
+    let block_after_inversion_r = Redstone::normal_block("block_after_inversion_r");
+    let torch_after_dust_inversion_r = Redstone::torch("torch_after_dust_inversion_r");
 
     ruststone::link(&input_r, &input_dust_r);
     ruststone::link(&input_dust_r, &dust_block_r);
@@ -307,12 +310,13 @@ fn xor_gate() {
     ruststone::link(&dust_block_r, &torch_in_front_block_r);
     ruststone::link(&torch_in_front_block_r, &dust_after_inversion_r);
     ruststone::link(&dust_after_inversion_r, &dust_after_inversion_r2);
-    ruststone::link(&dust_after_inversion_r2, &torch_after_dust_inversion_r);
+    ruststone::link(&dust_after_inversion_r2, &block_after_inversion_r);
+    ruststone::link(&block_after_inversion_r, &torch_after_dust_inversion_r);
 
-    let and_dust_1 = Redstone::dust();
-    let and_dust_2 = Redstone::dust();
-    let and_block = Redstone::normal_block();
-    let inversion_of_and = Redstone::torch();
+    let and_dust_1 = Redstone::dust("and_dust_1");
+    let and_dust_2 = Redstone::dust("and_dust_2");
+    let and_block = Redstone::normal_block("and_block");
+    let inversion_of_and = Redstone::torch("inversion_of_and");
 
     ruststone::link(&torch_on_top_block_l, &and_dust_1);
     ruststone::link(&torch_on_top_block_r, &and_dust_1);
@@ -323,13 +327,13 @@ fn xor_gate() {
     ruststone::link(&inversion_of_and, &dust_after_inversion_l);
     ruststone::link(&inversion_of_and, &dust_after_inversion_r);
 
-    let output = Redstone::dust();
+    let output = Redstone::dust("output");
 
     ruststone::link(&torch_after_dust_inversion_l, &output);
     ruststone::link(&torch_after_dust_inversion_r, &output);
 
-    let cg = ConstraintGraph::collect(input_r.clone());
-    // assert_eq!(cg.len(), 9);
+    let cg = ConstraintGraph::collect(output.clone());
+    assert_eq!(cg.len(), 9);
     cg.solve_constraints();
 
     assert!(input_l.borrow().redstate().is_on());

@@ -48,6 +48,7 @@ impl Constraint {
                 ref incoming,
                 ref outgoing,
                 ref redstate,
+                ..
             } => {
                 match incoming {
                     Some(incoming) => redstate.set_power(
@@ -69,12 +70,12 @@ impl Constraint {
                 ref incoming,
                 ref outgoing,
                 ref redstate,
+                ..
             } => {
                 // A Dust having no edges is disjoint, so it can't
                 // possibly have reached this point by now.
                 let max = incoming
                     .iter()
-                    .chain(outgoing.iter())
                     .map(|r| r.borrow().redstate().clone())
                     .filter(|r| r.updated_frame() == Some(current_frame))
                     .max_by_key(|r| r.get_power())
@@ -92,6 +93,7 @@ impl Constraint {
                 ref incoming,
                 ref outgoing,
                 ref redstate,
+                ..
             } => {
                 let has_power = incoming.iter().any(|r| r.borrow().redstate().is_on());
                 let is_forced = incoming.iter().any(|r| r.borrow().redstate().is_forced());
@@ -126,12 +128,14 @@ impl Constraint {
 
 pub struct ConstraintGraph {
     constraints: Vec<Rc<Constraint>>,
+    events: RefCell<Vec<String>>,
 }
 
 impl ConstraintGraph {
     fn new() -> ConstraintGraph {
         ConstraintGraph {
             constraints: Vec::new(),
+            events: RefCell::new(Vec::new()),
         }
     }
 
@@ -258,11 +262,19 @@ impl ConstraintGraph {
         while !queue.is_empty() {
             while let Some(c) = queue.pop_front() {
                 if !c.dispatchable(frame) {
+                    self.push_event(c.redstone.borrow().name() + " was deferred!");
                     deferred.push_back(c);
                     continue;
                 }
 
+                let previous_state = c.redstone.borrow().redstate().is_on();
                 let extra_constraints = c.dispatch(frame);
+                let new_state = c.redstone.borrow().redstate().is_on();
+
+                self.push_event(c.redstone.borrow().name() + " was dispatched!");
+                self.push_event("it went from ".to_owned() + &previous_state.to_string() + " to " + &new_state.to_string());
+                self.push_event(extra_constraints.len().to_string() + " new constraints queued");
+
                 for c in extra_constraints {
                     queue.push_back(c);
                 }
@@ -271,5 +283,9 @@ impl ConstraintGraph {
             queue = deferred;
             deferred = VecDeque::new();
         }
+    }
+
+    fn push_event(&self, event: String) {
+        self.events.borrow_mut().push(event)
     }
 }
