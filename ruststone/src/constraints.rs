@@ -128,12 +128,12 @@ impl ConstraintGraph {
 
     pub fn collect(redstone: RedstoneRef) -> ConstraintGraph {
         let mut visited = HashSet::new();
-        let mut discovery_queue = VecDeque::new();
-        discovery_queue.push_front(redstone);
+        let mut queue = VecDeque::new();
+        queue.push_front(redstone);
 
         let mut cg = ConstraintGraph::new();
 
-        while let Some(current) = discovery_queue.pop_front() {
+        while let Some(current) = queue.pop_front() {
             if visited.contains(&Rc::as_ptr(&current)) {
                 continue;
             }
@@ -148,16 +148,16 @@ impl ConstraintGraph {
                     ..
                 } => {
                     if let Some(incoming) = incoming {
-                        discovery_queue.push_back(incoming.clone())
+                        queue.push_back(incoming.clone())
                     }
 
                     for redstone_cell in outgoing {
-                        discovery_queue.push_back(redstone_cell.clone());
+                        queue.push_back(redstone_cell.clone());
                     }
                 }
                 Redstone::Dust { ref edges, .. } => {
                     for edge in edges {
-                        discovery_queue.push_back(edge.clone());
+                        queue.push_back(edge.clone());
                     }
                 }
                 Redstone::NormalBlock {
@@ -166,11 +166,11 @@ impl ConstraintGraph {
                     ..
                 } => {
                     for incoming in incoming {
-                        discovery_queue.push_back(incoming.clone());
+                        queue.push_back(incoming.clone());
                     }
 
                     for outgoing in outgoing {
-                        discovery_queue.push_back(outgoing.clone());
+                        queue.push_back(outgoing.clone());
                     }
                 }
             }
