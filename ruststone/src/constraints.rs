@@ -151,8 +151,8 @@ impl ConstraintGraph {
                         queue.push_back(incoming.clone())
                     }
 
-                    for redstone_cell in outgoing {
-                        queue.push_back(redstone_cell.clone());
+                    for outgoing in outgoing {
+                        queue.push_back(outgoing.clone());
                     }
                 }
                 Redstone::Dust { ref edges, .. } => {
