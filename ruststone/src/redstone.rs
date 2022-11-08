@@ -12,10 +12,12 @@ pub enum Redstone {
         outgoing: Vec<RedstoneRef>,
         redstate: Redstate,
     },
+    // TODO: We might need the Dust to know all of the power /sources/ to get a sense
+    // of whether we can trust its redstate. If the dust's power sources are all offline,
+    // then any dust's redstate that's online are just a consequence of previous constraints.
     Dust {
         name: String,
-        incoming: Vec<RedstoneRef>,
-        outgoing: Vec<RedstoneRef>,
+        edges: Vec<RedstoneRef>,
         redstate: Redstate,
     },
     NormalBlock {
@@ -55,8 +57,7 @@ impl Redstone {
     pub fn dust(name: &str) -> RedstoneRef {
         Rc::new(RefCell::new(Redstone::Dust {
             name: String::from(name),
-            incoming: Vec::new(),
-            outgoing: Vec::new(),
+            edges: Vec::new(),
             redstate: Redstate::new(),
         }))
     }
@@ -79,11 +80,9 @@ pub fn link(here: &RedstoneRef, there: &RedstoneRef) {
             assert!(outgoing.len() <= 5, "Torch can only connect up to 5 edges");
             outgoing.push(Rc::clone(there));
         }
-        Redstone::Dust {
-            ref mut outgoing, ..
-        } => {
-            assert!(outgoing.len() <= 6, "Dust can only connect up to 6 edges");
-            outgoing.push(Rc::clone(there));
+        Redstone::Dust { ref mut edges, .. } => {
+            assert!(edges.len() <= 6, "Dust can only connect up to 6 edges");
+            edges.push(Rc::clone(there));
         }
         Redstone::NormalBlock {
             ref mut outgoing, ..
@@ -103,11 +102,9 @@ pub fn link(here: &RedstoneRef, there: &RedstoneRef) {
             assert!(incoming.is_none());
             *incoming = Some(Rc::clone(here));
         }
-        Redstone::Dust {
-            ref mut incoming, ..
-        } => {
-            assert!(incoming.len() <= 6, "Dust can only connect up to 6 edges");
-            incoming.push(Rc::clone(here));
+        Redstone::Dust { ref mut edges, .. } => {
+            assert!(edges.len() <= 6, "Dust can only connect up to 6 edges");
+            edges.push(Rc::clone(here));
         }
         Redstone::NormalBlock {
             ref mut incoming, ..

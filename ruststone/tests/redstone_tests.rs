@@ -8,7 +8,7 @@ fn torch_and_dust() {
     ruststone::link(&torch, &dust);
 
     let cg = ConstraintGraph::collect(torch.clone());
-    assert_eq!(cg.len(), 1);
+    assert_eq!(cg.len(), 2);
     cg.solve_constraints();
 
     assert_eq!(torch.borrow().redstate().get_power(), 16);
@@ -27,7 +27,7 @@ fn torch_and_dust_and_dust_and_dust() {
     ruststone::link(&dust2, &dust3);
 
     let cg = ConstraintGraph::collect(torch.clone());
-    assert_eq!(cg.len(), 1);
+    assert_eq!(cg.len(), 4);
     cg.solve_constraints();
 
     assert_eq!(torch.borrow().redstate().get_power(), 16);
@@ -76,7 +76,7 @@ fn torch_and_dust_until_it_runs_out_of_redpower() {
     ruststone::link(&dust16, &dust17);
 
     let cg = ConstraintGraph::collect(torch.clone());
-    assert_eq!(cg.len(), 1);
+    assert_eq!(cg.len(), 18);
     cg.solve_constraints();
 
     assert_eq!(torch.borrow().redstate().get_power(), 16);
@@ -103,7 +103,7 @@ fn dust_in_the_middle_of_two_torches() {
     ruststone::link(&torch_r, &dust5);
 
     let cg = ConstraintGraph::collect(torch_l.clone());
-    assert_eq!(cg.len(), 2);
+    assert_eq!(cg.len(), 7);
     cg.solve_constraints();
 
     assert_eq!(torch_l.borrow().redstate().get_power(), 16);
@@ -127,7 +127,7 @@ fn torch_is_off_if_its_incoming_edge_is_on() {
     ruststone::link(&normal_block, &output);
 
     let cg = ConstraintGraph::collect(torch.clone());
-    assert_eq!(cg.len(), 2);
+    assert_eq!(cg.len(), 4);
     cg.solve_constraints();
 
     assert_eq!(torch.borrow().redstate().get_power(), 16);
@@ -149,7 +149,7 @@ fn torch_and_dust_and_block_and_dust() {
     ruststone::link(&normal_block, &dust2);
 
     let cg = ConstraintGraph::collect(torch.clone());
-    assert_eq!(cg.len(), 1);
+    assert_eq!(cg.len(), 4);
     cg.solve_constraints();
 
     assert_eq!(torch.borrow().redstate().get_power(), 16);
@@ -190,7 +190,7 @@ fn and_gate() {
     ruststone::link(&block_m, &output);
 
     let cg = ConstraintGraph::collect(output.clone());
-    assert_eq!(cg.len(), 5);
+    assert_eq!(cg.len(), 11);
     cg.solve_constraints();
 
     assert!(input_l.borrow().redstate().is_on());
@@ -229,7 +229,7 @@ fn and_gate_with_one_arm_off() {
     ruststone::link(&block_m, &output);
 
     let cg = ConstraintGraph::collect(output.clone());
-    assert_eq!(cg.len(), 4);
+    assert_eq!(cg.len(), 10);
     cg.solve_constraints();
 
     assert!(input_r.borrow().redstate().is_on());
@@ -265,7 +265,7 @@ fn and_gate_with_both_arms_off() {
     ruststone::link(&block_m, &output);
 
     let cg = ConstraintGraph::collect(output.clone());
-    assert_eq!(cg.len(), 3);
+    assert_eq!(cg.len(), 9);
     cg.solve_constraints();
 
     assert!(and_l.borrow().redstate().is_on());
@@ -333,7 +333,7 @@ fn xor_gate() {
     ruststone::link(&torch_after_dust_inversion_r, &output);
 
     let cg = ConstraintGraph::collect(output.clone());
-    assert_eq!(cg.len(), 9);
+    assert_eq!(cg.len(), 23);
     cg.solve_constraints();
 
     assert!(input_l.borrow().redstate().is_on());
@@ -406,7 +406,7 @@ fn xor_gate_with_left_off() {
     ruststone::link(&torch_after_dust_inversion_r, &output);
 
     let cg = ConstraintGraph::collect(output.clone());
-    assert_eq!(cg.len(), 8);
+    assert_eq!(cg.len(), 22);
     cg.solve_constraints();
 
     assert!(input_r.borrow().redstate().is_on());
@@ -478,7 +478,7 @@ fn xor_gate_with_right_off() {
     ruststone::link(&torch_after_dust_inversion_r, &output);
 
     let cg = ConstraintGraph::collect(output.clone());
-    assert_eq!(cg.len(), 8);
+    assert_eq!(cg.len(), 22);
     cg.solve_constraints();
 
     assert!(input_l.borrow().redstate().is_on());
@@ -548,7 +548,7 @@ fn xor_gate_with_both_off() {
     ruststone::link(&torch_after_dust_inversion_r, &output);
 
     let cg = ConstraintGraph::collect(output.clone());
-    assert_eq!(cg.len(), 7);
+    assert_eq!(cg.len(), 21);
     cg.solve_constraints();
 
     assert!(torch_on_top_block_l.borrow().redstate().is_on());
