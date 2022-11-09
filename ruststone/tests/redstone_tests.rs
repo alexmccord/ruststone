@@ -699,7 +699,7 @@ fn memory_cell() {
     let torch_a = Redstone::torch("torch_a");
     let dust_a1 = Redstone::dust("dust_a1");
     let dust_a2 = Redstone::dust("dust_a2");
-    
+
     let block_b = Redstone::normal_block("block_b");
     let torch_b = Redstone::torch("torch_b");
     let dust_b1 = Redstone::dust("dust_b1");
@@ -735,7 +735,7 @@ fn memory_cell_alt() {
     let torch_a = Redstone::torch("torch_a");
     let dust_a1 = Redstone::dust("dust_a1");
     let dust_a2 = Redstone::dust("dust_a2");
-    
+
     let block_b = Redstone::normal_block("block_b");
     let torch_b = Redstone::torch("torch_b");
     let dust_b1 = Redstone::dust("dust_b1");
