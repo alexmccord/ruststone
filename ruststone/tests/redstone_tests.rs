@@ -692,3 +692,42 @@ fn xor_gate_with_both_off() {
     assert!(torch_after_dust_inversion_r.borrow().redstate().is_off());
     assert!(output.borrow().redstate().is_off());
 }
+
+#[test]
+fn memory_cell() {
+    let block_a = Redstone::normal_block("block_a");
+    let torch_a = Redstone::torch("torch_a");
+    let dust_a = Redstone::dust("dust_a");
+    
+    let block_b = Redstone::normal_block("block_b");
+    let torch_b = Redstone::torch("torch_b");
+    let dust_b1 = Redstone::dust("dust_b1");
+    let dust_b2 = Redstone::dust("dust_b2");
+    let dust_b3 = Redstone::dust("dust_b3");
+    let dust_b4 = Redstone::dust("dust_b4");
+
+    ruststone::link(&block_a, &torch_a);
+    ruststone::link(&torch_a, &dust_a);
+    ruststone::link(&dust_a, &block_b);
+
+    ruststone::add_weighted_edge(&dust_a, &torch_a, 1);
+
+    ruststone::link(&block_b, &torch_b);
+    ruststone::link(&torch_b, &dust_b1);
+    ruststone::link(&dust_b1, &dust_b2);
+    ruststone::link(&dust_b2, &dust_b3);
+    ruststone::link(&dust_b3, &dust_b4);
+    ruststone::link(&dust_b4, &block_a);
+
+    ruststone::add_weighted_edge(&dust_b1, &torch_b, 1);
+    ruststone::add_weighted_edge(&dust_b2, &torch_b, 2);
+    ruststone::add_weighted_edge(&dust_b3, &torch_b, 3);
+    ruststone::add_weighted_edge(&dust_b4, &torch_b, 4);
+
+    let cg = ConstraintGraph::collect(block_a);
+    assert_eq!(cg.len(), 2);
+    cg.solve_constraints();
+
+    assert!(torch_a.borrow().redstate().is_on());
+    assert!(torch_b.borrow().redstate().is_off());
+}
