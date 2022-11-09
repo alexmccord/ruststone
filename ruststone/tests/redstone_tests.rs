@@ -707,7 +707,7 @@ fn memory_cell() {
 
     ruststone::link(&block_a, &torch_a);
     ruststone::link(&torch_a, &dust_a1);
-    ruststone::link(&dust_a1, &block_b);
+    ruststone::link(&dust_a1, &dust_a2);
     ruststone::link(&dust_a2, &block_b);
 
     ruststone::add_weighted_edge(&dust_a1, &torch_a, 1);
@@ -716,6 +716,7 @@ fn memory_cell() {
     ruststone::link(&block_b, &torch_b);
     ruststone::link(&torch_b, &dust_b1);
     ruststone::link(&dust_b1, &dust_b2);
+    ruststone::link(&dust_b2, &block_a);
 
     ruststone::add_weighted_edge(&dust_b1, &torch_b, 1);
     ruststone::add_weighted_edge(&dust_b2, &torch_b, 2);
@@ -726,4 +727,40 @@ fn memory_cell() {
 
     assert!(torch_a.borrow().redstate().is_on());
     assert!(torch_b.borrow().redstate().is_off());
+}
+
+#[test]
+fn memory_cell_alt() {
+    let block_a = Redstone::normal_block("block_a");
+    let torch_a = Redstone::torch("torch_a");
+    let dust_a1 = Redstone::dust("dust_a1");
+    let dust_a2 = Redstone::dust("dust_a2");
+    
+    let block_b = Redstone::normal_block("block_b");
+    let torch_b = Redstone::torch("torch_b");
+    let dust_b1 = Redstone::dust("dust_b1");
+    let dust_b2 = Redstone::dust("dust_b2");
+
+    ruststone::link(&block_a, &torch_a);
+    ruststone::link(&torch_a, &dust_a1);
+    ruststone::link(&dust_a1, &dust_a2);
+    ruststone::link(&dust_a2, &block_b);
+
+    ruststone::add_weighted_edge(&dust_a1, &torch_a, 1);
+    ruststone::add_weighted_edge(&dust_a2, &torch_a, 2);
+
+    ruststone::link(&block_b, &torch_b);
+    ruststone::link(&torch_b, &dust_b1);
+    ruststone::link(&dust_b1, &dust_b2);
+    ruststone::link(&dust_b2, &block_a);
+
+    ruststone::add_weighted_edge(&dust_b1, &torch_b, 1);
+    ruststone::add_weighted_edge(&dust_b2, &torch_b, 2);
+
+    let cg = ConstraintGraph::collect(block_b);
+    assert_eq!(cg.len(), 2);
+    cg.solve_constraints();
+
+    assert!(torch_a.borrow().redstate().is_off());
+    assert!(torch_b.borrow().redstate().is_on());
 }
