@@ -97,7 +97,9 @@ pub fn link(here: &RedstoneRef, there: &RedstoneRef) {
             assert!(outgoing.len() <= 5, "Torch can only connect up to 5 edges");
             outgoing.push(Rc::clone(there));
         }
-        Redstone::Dust { ref mut neighbors, .. } => {
+        Redstone::Dust {
+            ref mut neighbors, ..
+        } => {
             assert!(neighbors.len() <= 6, "Dust can only connect up to 6 edges");
             neighbors.push(Rc::clone(there));
         }
@@ -116,7 +118,9 @@ pub fn link(here: &RedstoneRef, there: &RedstoneRef) {
             assert!(incoming.is_none());
             *incoming = Some(Rc::clone(here));
         }
-        Redstone::Dust { ref mut neighbors, .. } => {
+        Redstone::Dust {
+            ref mut neighbors, ..
+        } => {
             if here.borrow().is_undirected() {
                 assert!(neighbors.len() <= 6, "Dust can only connect up to 6 edges");
                 neighbors.push(Rc::clone(here));
@@ -143,5 +147,8 @@ pub fn add_weighted_edge(dust: &RedstoneRef, source: &RedstoneRef, weight: u8) {
         panic!("`source` cannot be a Redstone::Dust");
     }
 
-    sources.push(WeightedEdge { weight, redstone: source.clone() });
+    sources.push(WeightedEdge {
+        weight,
+        redstone: source.clone(),
+    });
 }

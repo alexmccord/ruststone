@@ -75,7 +75,10 @@ impl Constraint {
 
                 for neighbor in neighbors {
                     if !self.is_created_by(neighbor) {
-                        extra.push(Constraint::new(neighbor.clone(), Some(self.redstone.clone())))
+                        extra.push(Constraint::new(
+                            neighbor.clone(),
+                            Some(self.redstone.clone()),
+                        ))
                     }
                 }
             }
@@ -153,7 +156,11 @@ impl ConstraintGraph {
                         queue.push_back(outgoing.clone());
                     }
                 }
-                Redstone::Dust { ref neighbors, ref sources, .. } => {
+                Redstone::Dust {
+                    ref neighbors,
+                    ref sources,
+                    ..
+                } => {
                     for neighbor in neighbors {
                         queue.push_back(neighbor.clone());
                     }
