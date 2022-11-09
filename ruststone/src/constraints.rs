@@ -57,28 +57,25 @@ impl Constraint {
                 }
             }
             Redstone::Dust {
-                ref edges,
+                ref neighbors,
+                ref sources,
                 ref redstate,
                 ..
             } => {
-                let Some(max) = edges
+                let Some((max, weight)) = sources
                     .iter()
-                    .map(|r| r.borrow().redstate().clone())
-                    .filter(|r| r.updated_frame() == Some(current_frame))
-                    .max_by_key(|r| r.get_power())
+                    .map(|e| (e.redstone.borrow().redstate().clone(), e.weight))
+                    .filter(|(r, _)| r.updated_frame() == Some(current_frame))
+                    .max_by_key(|(r, w)| r.get_power().saturating_sub(*w))
                 else {
                     return extra;
                 };
 
-                redstate.set_power(max.get_power().saturating_sub(1), current_frame);
+                redstate.set_power(max.get_power().saturating_sub(weight), current_frame);
 
-                for edge in edges {
-                    if let Redstone::Torch { .. } = *edge.borrow() {
-                        continue;
-                    }
-
-                    if !self.is_created_by(edge) {
-                        extra.push(Constraint::new(edge.clone(), Some(self.redstone.clone())))
+                for neighbor in neighbors {
+                    if !self.is_created_by(neighbor) {
+                        extra.push(Constraint::new(neighbor.clone(), Some(self.redstone.clone())))
                     }
                 }
             }
@@ -139,7 +136,6 @@ impl ConstraintGraph {
             }
 
             visited.insert(Rc::as_ptr(&current));
-            cg.constraints.push(Constraint::new(current.clone(), None));
 
             match *current.borrow() {
                 Redstone::Torch {
@@ -147,6 +143,8 @@ impl ConstraintGraph {
                     ref outgoing,
                     ..
                 } => {
+                    cg.constraints.push(Constraint::new(current.clone(), None));
+
                     if let Some(incoming) = incoming {
                         queue.push_back(incoming.clone())
                     }
@@ -155,9 +153,13 @@ impl ConstraintGraph {
                         queue.push_back(outgoing.clone());
                     }
                 }
-                Redstone::Dust { ref edges, .. } => {
-                    for edge in edges {
-                        queue.push_back(edge.clone());
+                Redstone::Dust { ref neighbors, ref sources, .. } => {
+                    for neighbor in neighbors {
+                        queue.push_back(neighbor.clone());
+                    }
+
+                    for source in sources {
+                        queue.push_back(source.redstone.clone());
                     }
                 }
                 Redstone::NormalBlock {
@@ -214,7 +216,7 @@ impl ConstraintGraph {
                 self.push_event(extra_constraints.len().to_string() + " new constraints queued");
 
                 for c in extra_constraints {
-                    queue.push_back(c);
+                    queue.push_front(c);
                 }
             }
 

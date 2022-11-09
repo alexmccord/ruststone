@@ -4,7 +4,13 @@ use crate::Redstate;
 
 pub(crate) type RedstoneRef = Rc<RefCell<Redstone>>;
 
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Clone)]
+pub struct WeightedEdge {
+    pub(crate) weight: u8,
+    pub(crate) redstone: RedstoneRef,
+}
+
+#[derive(Clone)]
 pub enum Redstone {
     Torch {
         name: String,
@@ -12,12 +18,33 @@ pub enum Redstone {
         outgoing: Vec<RedstoneRef>,
         redstate: Redstate,
     },
-    // TODO: We might need the Dust to know all of the power /sources/ to get a sense
-    // of whether we can trust its redstate. If the dust's power sources are all offline,
-    // then any dust's redstate that's online are just a consequence of previous constraints.
+    // TODO: We actually need a weighted directed graph.
+    // e.g. I have a circuit of the form:
+    // ```
+    // *--
+    // ABC
+    // ```
+    // where the weighted graph looks like
+    // ```
+    // A---2--->C
+    // A---1--->B
+    // ```
+    // then dispatch becomes a matter of checking
+    // whether all power sources are online.
+    // 
+    // Also note that the same RedstoneRef can have multiple edges,
+    // each with different weights so it's important to literally
+    // represent such an edge as e.g. for cases like `*---*`.
+    // ```rs
+    // struct WeightedEdge {
+    //     weight: u8,
+    //     redstone: RedstoneRef,
+    // }
+    // ```
     Dust {
         name: String,
-        edges: Vec<RedstoneRef>,
+        neighbors: Vec<RedstoneRef>,
+        sources: Vec<WeightedEdge>,
         redstate: Redstate,
     },
     NormalBlock {
@@ -57,7 +84,8 @@ impl Redstone {
     pub fn dust(name: &str) -> RedstoneRef {
         Rc::new(RefCell::new(Redstone::Dust {
             name: String::from(name),
-            edges: Vec::new(),
+            neighbors: Vec::new(),
+            sources: Vec::new(),
             redstate: Redstate::new(),
         }))
     }
@@ -70,6 +98,18 @@ impl Redstone {
             redstate: Redstate::new(),
         }))
     }
+
+    fn is_directed(&self) -> bool {
+        match self {
+            Redstone::Torch { .. } => true,
+            Redstone::Dust { .. } => false,
+            Redstone::NormalBlock { .. } => false,
+        }
+    }
+
+    fn is_undirected(&self) -> bool {
+        !self.is_directed()
+    }
 }
 
 pub fn link(here: &RedstoneRef, there: &RedstoneRef) {
@@ -80,17 +120,14 @@ pub fn link(here: &RedstoneRef, there: &RedstoneRef) {
             assert!(outgoing.len() <= 5, "Torch can only connect up to 5 edges");
             outgoing.push(Rc::clone(there));
         }
-        Redstone::Dust { ref mut edges, .. } => {
-            assert!(edges.len() <= 6, "Dust can only connect up to 6 edges");
-            edges.push(Rc::clone(there));
+        Redstone::Dust { ref mut neighbors, .. } => {
+            assert!(neighbors.len() <= 6, "Dust can only connect up to 6 edges");
+            neighbors.push(Rc::clone(there));
         }
         Redstone::NormalBlock {
             ref mut outgoing, ..
         } => {
             assert!(outgoing.len() <= 6, "Dust can only connect up to 6 edges");
-            if let Redstone::NormalBlock { .. } = *there.as_ref().borrow() {
-                panic!("NormalBlock cannot accept another NormalBlock as an outgoing edge");
-            }
             outgoing.push(Rc::clone(there));
         }
     }
@@ -102,9 +139,11 @@ pub fn link(here: &RedstoneRef, there: &RedstoneRef) {
             assert!(incoming.is_none());
             *incoming = Some(Rc::clone(here));
         }
-        Redstone::Dust { ref mut edges, .. } => {
-            assert!(edges.len() <= 6, "Dust can only connect up to 6 edges");
-            edges.push(Rc::clone(here));
+        Redstone::Dust { ref mut neighbors, .. } => {
+            if here.borrow().is_undirected() {
+                assert!(neighbors.len() <= 6, "Dust can only connect up to 6 edges");
+                neighbors.push(Rc::clone(here));
+            }
         }
         Redstone::NormalBlock {
             ref mut incoming, ..
@@ -113,10 +152,19 @@ pub fn link(here: &RedstoneRef, there: &RedstoneRef) {
                 incoming.len() <= 6,
                 "NormalBlock can only connect up to 6 edges"
             );
-            if let Redstone::NormalBlock { .. } = *here.as_ref().borrow() {
-                panic!("NormalBlock cannot accept another NormalBlock as an incoming edge");
-            }
             incoming.push(Rc::clone(here));
         }
     }
+}
+
+pub fn add_weighted_edge(dust: &RedstoneRef, source: &RedstoneRef, weight: u8) {
+    let Redstone::Dust { ref mut sources, .. } = *dust.borrow_mut() else {
+        panic!("`dust` must be a Redstone::Dust");
+    };
+
+    if let Redstone::Dust { .. } = *source.borrow() {
+        panic!("`source` cannot be a Redstone::Dust");
+    }
+
+    sources.push(WeightedEdge { weight, redstone: source.clone() });
 }
