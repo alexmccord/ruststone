@@ -220,9 +220,10 @@ impl ConstraintGraph {
 
                 self.push_event(c.redstone.borrow().name() + " was dispatched!");
                 self.push_event(previous_state.is_on().to_string() + " to " + &new_state.is_on().to_string());
-                self.push_event(extra_constraints.len().to_string() + " new constraints queued");
-
+                
                 if previous_state != new_state {
+                    self.push_event(extra_constraints.len().to_string() + " new constraints queued");
+
                     for c in extra_constraints {
                         queue.push_front(c);
                     }
