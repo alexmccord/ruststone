@@ -18,29 +18,6 @@ pub enum Redstone {
         outgoing: Vec<RedstoneRef>,
         redstate: Redstate,
     },
-    // TODO: We actually need a weighted directed graph.
-    // e.g. I have a circuit of the form:
-    // ```
-    // *--
-    // ABC
-    // ```
-    // where the weighted graph looks like
-    // ```
-    // A---2--->C
-    // A---1--->B
-    // ```
-    // then dispatch becomes a matter of checking
-    // whether all power sources are online.
-    // 
-    // Also note that the same RedstoneRef can have multiple edges,
-    // each with different weights so it's important to literally
-    // represent such an edge as e.g. for cases like `*---*`.
-    // ```rs
-    // struct WeightedEdge {
-    //     weight: u8,
-    //     redstone: RedstoneRef,
-    // }
-    // ```
     Dust {
         name: String,
         neighbors: Vec<RedstoneRef>,
