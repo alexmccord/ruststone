@@ -72,33 +72,33 @@ impl ConstraintGraph {
 
             visited.insert(Rc::as_ptr(&current));
 
-            match current.node() {
-                RedstoneNode::Torch(torch) => {
+            match *current.node() {
+                RedstoneNode::Torch(ref torch) => {
                     cg.constraints.push(Constraint::new(current.clone()));
 
-                    if let Some(ref incoming) = *torch.incoming.borrow() {
+                    if let Some(incoming) = &torch.incoming {
                         queue.push_back(incoming.clone())
                     }
 
-                    for outgoing in torch.outgoing.borrow().iter() {
+                    for outgoing in torch.outgoing.iter() {
                         queue.push_back(outgoing.clone());
                     }
                 }
-                RedstoneNode::Dust(dust) => {
-                    for neighbor in dust.neighbors.borrow().iter() {
+                RedstoneNode::Dust(ref dust) => {
+                    for neighbor in dust.neighbors.iter() {
                         queue.push_back(neighbor.clone());
                     }
 
-                    for source in dust.sources.borrow().iter() {
+                    for source in dust.sources.iter() {
                         queue.push_back(source.redstone.clone());
                     }
                 }
-                RedstoneNode::Block(block) => {
-                    for incoming in block.incoming.borrow().iter() {
+                RedstoneNode::Block(ref block) => {
+                    for incoming in block.incoming.iter() {
                         queue.push_back(incoming.clone());
                     }
 
-                    for outgoing in block.outgoing.borrow().iter() {
+                    for outgoing in block.outgoing.iter() {
                         queue.push_back(outgoing.clone());
                     }
                 }

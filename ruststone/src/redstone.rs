@@ -1,19 +1,23 @@
-use std::{cell::RefCell, rc::Rc};
+use std::{
+    cell::RefCell,
+    ops::{Deref, DerefMut},
+    rc::Rc,
+};
 
 use crate::{Constraint, ConstraintCtxt, ConstraintDispatch, Redstate};
 
 pub(crate) type RedstoneRef = Rc<Redstone>;
 
 pub struct RedstoneTorch {
-    pub(crate) incoming: RefCell<Option<RedstoneRef>>,
-    pub(crate) outgoing: RefCell<Vec<RedstoneRef>>,
+    pub(crate) incoming: Option<RedstoneRef>,
+    pub(crate) outgoing: Vec<RedstoneRef>,
 }
 
 impl ConstraintDispatch for RedstoneTorch {
     fn dispatch(&self, ctxt: ConstraintCtxt) -> Vec<Rc<Constraint>> {
         let mut extra = Vec::new();
 
-        match *self.incoming.borrow() {
+        match self.incoming {
             Some(ref incoming) => ctxt.redstone.redstate().set_power(
                 if incoming.redstate().is_on() { 0 } else { 16 },
                 ctxt.current_frame,
@@ -21,7 +25,7 @@ impl ConstraintDispatch for RedstoneTorch {
             None => ctxt.redstone.redstate().set_power(16, ctxt.current_frame),
         }
 
-        for out in self.outgoing.borrow().iter() {
+        for out in self.outgoing.iter() {
             extra.push(Constraint::new(out.clone()));
         }
 
@@ -35,8 +39,8 @@ pub(crate) struct WeightedEdge {
 }
 
 pub struct RedstoneDust {
-    pub(crate) neighbors: RefCell<Vec<RedstoneRef>>,
-    pub(crate) sources: RefCell<Vec<WeightedEdge>>,
+    pub(crate) neighbors: Vec<RedstoneRef>,
+    pub(crate) sources: Vec<WeightedEdge>,
 }
 
 impl ConstraintDispatch for RedstoneDust {
@@ -44,7 +48,6 @@ impl ConstraintDispatch for RedstoneDust {
         let mut extra = Vec::new();
 
         let Some((max, weight)) = self.sources
-            .borrow()
             .iter()
             .map(|e| (e.redstone.redstate().clone(), e.weight))
             .filter(|(r, _)| r.updated_frame() == Some(ctxt.current_frame))
@@ -57,7 +60,7 @@ impl ConstraintDispatch for RedstoneDust {
             .redstate()
             .set_power(max.get_power().saturating_sub(weight), ctxt.current_frame);
 
-        for neighbor in self.neighbors.borrow().iter() {
+        for neighbor in self.neighbors.iter() {
             extra.push(Constraint::new(neighbor.clone()));
         }
 
@@ -67,20 +70,16 @@ impl ConstraintDispatch for RedstoneDust {
 
 // Not the Redstone Block! It's just a block like Sandstone.
 pub struct Block {
-    pub(crate) incoming: RefCell<Vec<RedstoneRef>>,
-    pub(crate) outgoing: RefCell<Vec<RedstoneRef>>,
+    pub(crate) incoming: Vec<RedstoneRef>,
+    pub(crate) outgoing: Vec<RedstoneRef>,
 }
 
 impl ConstraintDispatch for Block {
     fn dispatch(&self, ctxt: ConstraintCtxt) -> Vec<Rc<Constraint>> {
         let mut extra = Vec::new();
 
-        let has_power = self.incoming.borrow().iter().any(|r| r.redstate().is_on());
-        let is_forced = self
-            .incoming
-            .borrow()
-            .iter()
-            .any(|r| r.redstate().is_forced());
+        let has_power = self.incoming.iter().any(|r| r.redstate().is_on());
+        let is_forced = self.incoming.iter().any(|r| r.redstate().is_forced());
 
         ctxt.redstone
             .redstate()
@@ -89,7 +88,7 @@ impl ConstraintDispatch for Block {
             .redstate()
             .set_power(if is_forced { 16 } else { 0 }, ctxt.current_frame);
 
-        for out in self.outgoing.borrow().iter() {
+        for out in self.outgoing.iter() {
             extra.push(Constraint::new(out.clone()));
         }
 
@@ -106,7 +105,7 @@ pub enum RedstoneNode {
 pub struct Redstone {
     name: String,
     redstate: Redstate,
-    node: RedstoneNode,
+    node: RefCell<RedstoneNode>,
 }
 
 impl Redstone {
@@ -118,18 +117,22 @@ impl Redstone {
         &self.redstate
     }
 
-    pub fn node(&self) -> &RedstoneNode {
-        &self.node
+    pub fn node(&self) -> impl Deref<Target = RedstoneNode> + '_ {
+        self.node.borrow()
+    }
+
+    pub fn node_mut(&self) -> impl DerefMut<Target = RedstoneNode> + '_ {
+        self.node.borrow_mut()
     }
 
     pub fn torch(name: &str) -> RedstoneRef {
         Rc::new(Redstone {
             name: String::from(name),
             redstate: Redstate::new(),
-            node: RedstoneNode::Torch(RedstoneTorch {
-                incoming: RefCell::new(None),
-                outgoing: RefCell::new(Vec::new()),
-            }),
+            node: RefCell::new(RedstoneNode::Torch(RedstoneTorch {
+                incoming: None,
+                outgoing: Vec::new(),
+            })),
         })
     }
 
@@ -137,10 +140,10 @@ impl Redstone {
         Rc::new(Redstone {
             name: String::from(name),
             redstate: Redstate::new(),
-            node: RedstoneNode::Dust(RedstoneDust {
-                neighbors: RefCell::new(Vec::new()),
-                sources: RefCell::new(Vec::new()),
-            }),
+            node: RefCell::new(RedstoneNode::Dust(RedstoneDust {
+                neighbors: Vec::new(),
+                sources: Vec::new(),
+            })),
         })
     }
 
@@ -148,15 +151,15 @@ impl Redstone {
         Rc::new(Redstone {
             name: String::from(name),
             redstate: Redstate::new(),
-            node: RedstoneNode::Block(Block {
-                incoming: RefCell::new(Vec::new()),
-                outgoing: RefCell::new(Vec::new()),
-            }),
+            node: RefCell::new(RedstoneNode::Block(Block {
+                incoming: Vec::new(),
+                outgoing: Vec::new(),
+            })),
         })
     }
 
     fn is_directed(&self) -> bool {
-        match self.node {
+        match *self.node() {
             RedstoneNode::Torch(..) => true,
             RedstoneNode::Dust(..) => false,
             RedstoneNode::Block(..) => false,
@@ -170,7 +173,7 @@ impl Redstone {
 
 impl ConstraintDispatch for Redstone {
     fn dispatch(&self, ctxt: ConstraintCtxt) -> Vec<Rc<Constraint>> {
-        match &self.node {
+        match &*self.node() {
             RedstoneNode::Torch(torch) => torch.dispatch(ctxt),
             RedstoneNode::Dust(dust) => dust.dispatch(ctxt),
             RedstoneNode::Block(block) => block.dispatch(ctxt),
@@ -179,64 +182,64 @@ impl ConstraintDispatch for Redstone {
 }
 
 pub fn link(here: &RedstoneRef, there: &RedstoneRef) {
-    match &here.node {
+    match &mut *here.node_mut() {
         RedstoneNode::Torch(torch) => {
             assert!(
-                torch.outgoing.borrow().len() <= 5,
+                torch.outgoing.len() <= 5,
                 "Torch can only connect up to 5 edges"
             );
-            torch.outgoing.borrow_mut().push(Rc::clone(there));
+            torch.outgoing.push(Rc::clone(there));
         }
         RedstoneNode::Dust(dust) => {
             assert!(
-                dust.neighbors.borrow().len() <= 6,
+                dust.neighbors.len() <= 6,
                 "Dust can only connect up to 6 edges"
             );
-            dust.neighbors.borrow_mut().push(Rc::clone(there));
+            dust.neighbors.push(Rc::clone(there));
         }
         RedstoneNode::Block(block) => {
             assert!(
-                block.outgoing.borrow().len() <= 6,
+                block.outgoing.len() <= 6,
                 "Dust can only connect up to 6 edges"
             );
-            block.outgoing.borrow_mut().push(Rc::clone(there));
+            block.outgoing.push(Rc::clone(there));
         }
     }
 
-    match &there.node {
+    match &mut *there.node_mut() {
         RedstoneNode::Torch(torch) => {
-            assert!(torch.incoming.borrow().is_none());
-            *torch.incoming.borrow_mut() = Some(Rc::clone(here));
+            assert!(torch.incoming.is_none());
+            torch.incoming = Some(Rc::clone(here));
         }
         RedstoneNode::Dust(dust) => {
             if here.is_undirected() {
                 assert!(
-                    dust.neighbors.borrow().len() <= 6,
+                    dust.neighbors.len() <= 6,
                     "Dust can only connect up to 6 edges"
                 );
-                dust.neighbors.borrow_mut().push(Rc::clone(here));
+                dust.neighbors.push(Rc::clone(here));
             }
         }
         RedstoneNode::Block(block) => {
             assert!(
-                block.incoming.borrow().len() <= 6,
+                block.incoming.len() <= 6,
                 "block can only connect up to 6 edges"
             );
-            block.incoming.borrow_mut().push(Rc::clone(here));
+            block.incoming.push(Rc::clone(here));
         }
     }
 }
 
 pub fn add_weighted_edge(dust: &RedstoneRef, source: &RedstoneRef, weight: u8) {
-    let RedstoneNode::Dust(dust) = &dust.node else {
-        panic!("`dust` must be a Redstone::Dust");
+    let RedstoneNode::Dust(ref mut dust) = *dust.node_mut() else {
+        panic!("`dust` must be a RedstoneDust");
     };
 
-    if let RedstoneNode::Dust(..) = source.node {
-        panic!("`source` cannot be a Redstone::Dust");
+    if let RedstoneNode::Dust(..) = *source.node() {
+        panic!("`source` cannot be a RedstoneDust");
     }
 
-    dust.sources.borrow_mut().push(WeightedEdge {
+    dust.sources.push(WeightedEdge {
         weight,
         redstone: source.clone(),
     });
