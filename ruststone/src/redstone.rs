@@ -1,12 +1,32 @@
 use std::{cell::RefCell, rc::Rc};
 
-use crate::Redstate;
+use crate::{Constraint, ConstraintCtxt, ConstraintDispatch, Redstate};
 
 pub(crate) type RedstoneRef = Rc<Redstone>;
 
 pub struct RedstoneTorch {
     pub(crate) incoming: RefCell<Option<RedstoneRef>>,
     pub(crate) outgoing: RefCell<Vec<RedstoneRef>>,
+}
+
+impl ConstraintDispatch for RedstoneTorch {
+    fn dispatch(&self, ctxt: ConstraintCtxt) -> Vec<Rc<Constraint>> {
+        let mut extra = Vec::new();
+
+        match *self.incoming.borrow() {
+            Some(ref incoming) => ctxt.redstone.redstate().set_power(
+                if incoming.redstate().is_on() { 0 } else { 16 },
+                ctxt.current_frame,
+            ),
+            None => ctxt.redstone.redstate().set_power(16, ctxt.current_frame),
+        }
+
+        for out in self.outgoing.borrow().iter() {
+            extra.push(Constraint::new(out.clone()));
+        }
+
+        extra
+    }
 }
 
 pub(crate) struct WeightedEdge {
@@ -19,22 +39,74 @@ pub struct RedstoneDust {
     pub(crate) sources: RefCell<Vec<WeightedEdge>>,
 }
 
+impl ConstraintDispatch for RedstoneDust {
+    fn dispatch(&self, ctxt: ConstraintCtxt) -> Vec<Rc<Constraint>> {
+        let mut extra = Vec::new();
+
+        let Some((max, weight)) = self.sources
+            .borrow()
+            .iter()
+            .map(|e| (e.redstone.redstate().clone(), e.weight))
+            .filter(|(r, _)| r.updated_frame() == Some(ctxt.current_frame))
+            .max_by_key(|(r, w)| r.get_power().saturating_sub(*w))
+        else {
+            return extra;
+        };
+
+        ctxt.redstone
+            .redstate()
+            .set_power(max.get_power().saturating_sub(weight), ctxt.current_frame);
+
+        for neighbor in self.neighbors.borrow().iter() {
+            extra.push(Constraint::new(neighbor.clone()));
+        }
+
+        extra
+    }
+}
+
 // Not the Redstone Block! It's just a block like Sandstone.
 pub struct Block {
     pub(crate) incoming: RefCell<Vec<RedstoneRef>>,
     pub(crate) outgoing: RefCell<Vec<RedstoneRef>>,
 }
 
-pub struct Redstone {
-    name: String,
-    redstate: Redstate,
-    node: RedstoneNode,
+impl ConstraintDispatch for Block {
+    fn dispatch(&self, ctxt: ConstraintCtxt) -> Vec<Rc<Constraint>> {
+        let mut extra = Vec::new();
+
+        let has_power = self.incoming.borrow().iter().any(|r| r.redstate().is_on());
+        let is_forced = self
+            .incoming
+            .borrow()
+            .iter()
+            .any(|r| r.redstate().is_forced());
+
+        ctxt.redstone
+            .redstate()
+            .set_forced(has_power, ctxt.current_frame);
+        ctxt.redstone
+            .redstate()
+            .set_power(if is_forced { 16 } else { 0 }, ctxt.current_frame);
+
+        for out in self.outgoing.borrow().iter() {
+            extra.push(Constraint::new(out.clone()));
+        }
+
+        extra
+    }
 }
 
 pub enum RedstoneNode {
     Torch(RedstoneTorch),
     Dust(RedstoneDust),
     Block(Block),
+}
+
+pub struct Redstone {
+    name: String,
+    redstate: Redstate,
+    node: RedstoneNode,
 }
 
 impl Redstone {
@@ -93,6 +165,16 @@ impl Redstone {
 
     fn is_undirected(&self) -> bool {
         !self.is_directed()
+    }
+}
+
+impl ConstraintDispatch for Redstone {
+    fn dispatch(&self, ctxt: ConstraintCtxt) -> Vec<Rc<Constraint>> {
+        match &self.node {
+            RedstoneNode::Torch(torch) => torch.dispatch(ctxt),
+            RedstoneNode::Dust(dust) => dust.dispatch(ctxt),
+            RedstoneNode::Block(block) => block.dispatch(ctxt),
+        }
     }
 }
 
