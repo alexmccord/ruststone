@@ -820,3 +820,147 @@ fn torch_and_dust_and_block_and_repeater_and_block_and_dust() {
     assert!(block2.redstate().is_forced());
     assert_eq!(dust2.redstate().get_power(), 15);
 }
+
+#[test]
+fn repeater_locked_by_its_neighbor() {
+    let torch = Redstone::torch("torch");
+    let dust1 = Redstone::dust("dust1");
+    let dust2 = Redstone::dust("dust2");
+    let dust3 = Redstone::dust("dust3");
+    let dust4 = Redstone::dust("dust4");
+    let throughput = Redstone::repeater("throughput", 2);
+    let locker = Redstone::repeater("locker", 1);
+    let output = Redstone::dust("output");
+
+    // |
+    // ^<+
+    // +++
+    //  *
+    ruststone::link(&torch, &dust1);
+    ruststone::link(&dust1, &dust2);
+    ruststone::link(&dust1, &dust3);
+    ruststone::link(&dust3, &dust4);
+
+    ruststone::link(&dust2, &throughput);
+    ruststone::link(&dust4, &locker);
+
+    ruststone::link(&throughput, &output);
+
+    ruststone::add_weighted_edge(&dust1, &torch, 1);
+    ruststone::add_weighted_edge(&dust2, &torch, 2);
+    ruststone::add_weighted_edge(&dust3, &torch, 2);
+    ruststone::add_weighted_edge(&dust4, &torch, 3);
+
+    ruststone::add_weighted_edge(&output, &throughput, 1);
+
+    ruststone::lock(&throughput, &locker);
+
+    let cg = ConstraintGraph::collect(output.clone());
+    assert_eq!(cg.len(), 1);
+    cg.solve_constraints();
+
+    assert!(torch.redstate().is_on());
+    assert_eq!(dust1.redstate().get_power(), 15);
+    assert_eq!(dust2.redstate().get_power(), 14);
+    assert_eq!(dust3.redstate().get_power(), 14);
+    assert_eq!(dust4.redstate().get_power(), 13);
+    assert!(locker.redstate().is_on());
+    assert!(throughput.redstate().is_off());
+    assert_eq!(output.redstate().get_power(), 0);
+}
+
+#[test]
+fn repeater_locked_by_its_slower_neighbor() {
+    let torch = Redstone::torch("torch");
+    let dust1 = Redstone::dust("dust1");
+    let dust2 = Redstone::dust("dust2");
+    let dust3 = Redstone::dust("dust3");
+    let dust4 = Redstone::dust("dust4");
+    let throughput = Redstone::repeater("throughput", 1);
+    let locker = Redstone::repeater("locker", 2);
+    let output = Redstone::dust("output");
+
+    // |
+    // ^<+
+    // +++
+    //  *
+    ruststone::link(&torch, &dust1);
+    ruststone::link(&dust1, &dust2);
+    ruststone::link(&dust1, &dust3);
+    ruststone::link(&dust3, &dust4);
+
+    ruststone::link(&dust2, &throughput);
+    ruststone::link(&dust4, &locker);
+
+    ruststone::link(&throughput, &output);
+
+    ruststone::add_weighted_edge(&dust1, &torch, 1);
+    ruststone::add_weighted_edge(&dust2, &torch, 2);
+    ruststone::add_weighted_edge(&dust3, &torch, 2);
+    ruststone::add_weighted_edge(&dust4, &torch, 3);
+
+    ruststone::add_weighted_edge(&output, &throughput, 1);
+
+    ruststone::lock(&throughput, &locker);
+
+    let cg = ConstraintGraph::collect(output.clone());
+    assert_eq!(cg.len(), 1);
+    cg.solve_constraints();
+
+    assert!(torch.redstate().is_on());
+    assert_eq!(dust1.redstate().get_power(), 15);
+    assert_eq!(dust2.redstate().get_power(), 14);
+    assert_eq!(dust3.redstate().get_power(), 14);
+    assert_eq!(dust4.redstate().get_power(), 13);
+    assert!(locker.redstate().is_on());
+    assert!(throughput.redstate().is_on());
+    assert_eq!(output.redstate().get_power(), 15);
+}
+
+#[test]
+fn repeater_locked_simultaneously_by_its_neighbors() {
+    let torch = Redstone::torch("torch");
+    let dust1 = Redstone::dust("dust1");
+    let dust2 = Redstone::dust("dust2");
+    let dust3 = Redstone::dust("dust3");
+    let dust4 = Redstone::dust("dust4");
+    let throughput = Redstone::repeater("throughput", 1);
+    let locker = Redstone::repeater("locker", 1);
+    let output = Redstone::dust("output");
+
+    // |
+    // ^<+
+    // +++
+    //  *
+    ruststone::link(&torch, &dust1);
+    ruststone::link(&dust1, &dust2);
+    ruststone::link(&dust1, &dust3);
+    ruststone::link(&dust3, &dust4);
+
+    ruststone::link(&dust2, &throughput);
+    ruststone::link(&dust4, &locker);
+
+    ruststone::link(&throughput, &output);
+
+    ruststone::add_weighted_edge(&dust1, &torch, 1);
+    ruststone::add_weighted_edge(&dust2, &torch, 2);
+    ruststone::add_weighted_edge(&dust3, &torch, 2);
+    ruststone::add_weighted_edge(&dust4, &torch, 3);
+
+    ruststone::add_weighted_edge(&output, &throughput, 1);
+
+    ruststone::lock(&throughput, &locker);
+
+    let cg = ConstraintGraph::collect(output.clone());
+    assert_eq!(cg.len(), 1);
+    cg.solve_constraints();
+
+    assert!(torch.redstate().is_on());
+    assert_eq!(dust1.redstate().get_power(), 15);
+    assert_eq!(dust2.redstate().get_power(), 14);
+    assert_eq!(dust3.redstate().get_power(), 14);
+    assert_eq!(dust4.redstate().get_power(), 13);
+    assert!(locker.redstate().is_on());
+    assert!(throughput.redstate().is_off());
+    assert_eq!(output.redstate().get_power(), 0);
+}

@@ -109,12 +109,17 @@ pub struct RedstoneRepeater {
     pub(crate) delay: Frame,
     pub(crate) incoming: Option<RedstoneRef>,
     pub(crate) outgoing: Option<RedstoneRef>,
-    // TODO: left and right edges too (locking logic)
+    pub(crate) neighbors: Vec<RedstoneRef>,
 }
 
 impl ConstraintDispatch for RedstoneRepeater {
     fn dispatch(&self, ctxt: ConstraintCtxt) -> Vec<Rc<Constraint>> {
         let mut extra = Vec::new();
+
+        // If any neighbors are on, we'll need to lock the redstate of this repeater.
+        if self.neighbors.iter().any(|n| n.redstate.is_on()) {
+            return extra;
+        }
 
         let Some(incoming) = &self.incoming else {
             return extra;
@@ -208,6 +213,7 @@ impl Redstone {
                 delay: Frame(delay.into()),
                 incoming: None,
                 outgoing: None,
+                neighbors: Vec::new(),
             })),
         })
     }
@@ -303,4 +309,15 @@ pub fn add_weighted_edge(dust: &RedstoneRef, source: &RedstoneRef, weight: u8) {
         weight,
         redstone: source.clone(),
     });
+}
+
+pub fn lock(repeater: &RedstoneRef, edge: &RedstoneRef) {
+    let RedstoneNode::Repeater(ref mut repeater) = *repeater.node_mut() else {
+        panic!("`repeater` must be a RedstoneRepeater");
+    };
+
+    assert!((0..=2).contains(&repeater.neighbors.len()));
+    assert!(matches!(*edge.node(), RedstoneNode::Repeater(..))); // TODO: comparator too.
+
+    repeater.neighbors.push(edge.clone());
 }

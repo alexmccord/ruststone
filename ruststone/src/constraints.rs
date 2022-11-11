@@ -115,6 +115,13 @@ impl ConstraintGraph {
                     }
                 }
                 RedstoneNode::Repeater(ref repeater) => {
+                    // TODO: This is probably too fragile to rely on for deterministic locking
+                    // on this repeater where the neighbors also lock this at the same time.
+                    // I'm not sure yet.
+                    for neighbor in &repeater.neighbors {
+                        queue.push_back(neighbor.clone());
+                    }
+
                     if let Some(incoming) = &repeater.incoming {
                         queue.push_back(incoming.clone());
                     }
