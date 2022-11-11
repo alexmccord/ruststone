@@ -4,7 +4,7 @@ use std::{
     rc::Rc,
 };
 
-use crate::{Frame, Redstone, RedstoneRef};
+use crate::{Frame, RedstoneRef, RedstoneNode};
 
 struct Constraint {
     // The next frame this constraint can be dispatched. If `None`, it's dispatchable right away.
@@ -33,10 +33,10 @@ impl Constraint {
         assert!(self.dispatchable(current_frame));
         let mut extra = Vec::new();
 
-        match *self.redstone.borrow() {
-            Redstone::Torch(ref torch) => {
+        match &self.redstone.borrow().node {
+            RedstoneNode::Torch(torch) => {
                 match &torch.incoming {
-                    Some(incoming) => torch.redstate.set_power(
+                    Some(incoming) => self.redstone.borrow().redstate.set_power(
                         if incoming.borrow().redstate().is_on() {
                             0
                         } else {
@@ -44,14 +44,14 @@ impl Constraint {
                         },
                         current_frame,
                     ),
-                    None => torch.redstate.set_power(16, current_frame),
+                    None => self.redstone.borrow().redstate.set_power(16, current_frame),
                 }
 
                 for out in &torch.outgoing {
                     extra.push(Constraint::new(out.clone(), Some(self.redstone.clone())))
                 }
             }
-            Redstone::Dust(ref dust) => {
+            RedstoneNode::Dust(ref dust) => {
                 let Some((max, weight)) = dust.sources
                     .iter()
                     .map(|e| (e.redstone.borrow().redstate().clone(), e.weight))
@@ -61,7 +61,7 @@ impl Constraint {
                     return extra;
                 };
 
-                dust.redstate
+                self.redstone.borrow().redstate
                     .set_power(max.get_power().saturating_sub(weight), current_frame);
 
                 for neighbor in &dust.neighbors {
@@ -73,15 +73,15 @@ impl Constraint {
                     }
                 }
             }
-            Redstone::Block(ref block) => {
+            RedstoneNode::Block(ref block) => {
                 let has_power = block.incoming.iter().any(|r| r.borrow().redstate().is_on());
                 let is_forced = block
                     .incoming
                     .iter()
                     .any(|r| r.borrow().redstate().is_forced());
 
-                block.redstate.set_forced(has_power, current_frame);
-                block
+                self.redstone.borrow().redstate.set_forced(has_power, current_frame);
+                self.redstone.borrow()
                     .redstate
                     .set_power(if is_forced { 16 } else { 0 }, current_frame);
 
@@ -131,8 +131,8 @@ impl ConstraintGraph {
 
             visited.insert(Rc::as_ptr(&current));
 
-            match *current.borrow() {
-                Redstone::Torch(ref torch) => {
+            match current.borrow().node {
+                RedstoneNode::Torch(ref torch) => {
                     cg.constraints.push(Constraint::new(current.clone(), None));
 
                     if let Some(incoming) = &torch.incoming {
@@ -143,7 +143,7 @@ impl ConstraintGraph {
                         queue.push_back(outgoing.clone());
                     }
                 }
-                Redstone::Dust(ref dust) => {
+                RedstoneNode::Dust(ref dust) => {
                     for neighbor in &dust.neighbors {
                         queue.push_back(neighbor.clone());
                     }
@@ -152,7 +152,7 @@ impl ConstraintGraph {
                         queue.push_back(source.redstone.clone());
                     }
                 }
-                Redstone::Block(ref block) => {
+                RedstoneNode::Block(ref block) => {
                     for incoming in &block.incoming {
                         queue.push_back(incoming.clone());
                     }

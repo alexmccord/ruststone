@@ -4,34 +4,36 @@ use crate::Redstate;
 
 pub(crate) type RedstoneRef = Rc<RefCell<Redstone>>;
 
-pub struct RedstoneTorch {
+pub(crate) struct RedstoneTorch {
     pub(crate) name: String,
     pub(crate) incoming: Option<RedstoneRef>,
     pub(crate) outgoing: Vec<RedstoneRef>,
-    pub(crate) redstate: Redstate,
 }
 
-pub struct WeightedEdge {
+pub(crate) struct WeightedEdge {
     pub(crate) weight: u8,
     pub(crate) redstone: RedstoneRef,
 }
 
-pub struct RedstoneDust {
+pub(crate) struct RedstoneDust {
     pub(crate) name: String,
     pub(crate) neighbors: Vec<RedstoneRef>,
     pub(crate) sources: Vec<WeightedEdge>,
-    pub(crate) redstate: Redstate,
 }
 
 // Not the Redstone Block! It's just a block like Sandstone.
-pub struct Block {
+pub(crate) struct Block {
     pub(crate) name: String,
     pub(crate) incoming: Vec<RedstoneRef>,
     pub(crate) outgoing: Vec<RedstoneRef>,
-    pub(crate) redstate: Redstate,
 }
 
-pub enum Redstone {
+pub struct Redstone {
+    pub(crate) redstate: Redstate,
+    pub(crate) node: RedstoneNode,
+}
+
+pub(crate) enum RedstoneNode {
     Torch(RedstoneTorch),
     Dust(RedstoneDust),
     Block(Block),
@@ -39,53 +41,55 @@ pub enum Redstone {
 
 impl Redstone {
     pub fn name(&self) -> String {
-        match self {
-            Redstone::Torch(torch) => torch.name.clone(),
-            Redstone::Dust(dust) => dust.name.clone(),
-            Redstone::Block(block) => block.name.clone(),
+        match &self.node {
+            RedstoneNode::Torch(torch) => torch.name.clone(),
+            RedstoneNode::Dust(dust) => dust.name.clone(),
+            RedstoneNode::Block(block) => block.name.clone(),
         }
     }
 
     pub fn redstate(&self) -> &Redstate {
-        match self {
-            Redstone::Torch(torch) => &torch.redstate,
-            Redstone::Dust(dust) => &dust.redstate,
-            Redstone::Block(block) => &block.redstate,
-        }
+        &self.redstate
     }
 
     pub fn torch(name: &str) -> RedstoneRef {
-        Rc::new(RefCell::new(Redstone::Torch(RedstoneTorch {
-            name: String::from(name),
-            incoming: None,
-            outgoing: Vec::new(),
+        Rc::new(RefCell::new(Redstone {
             redstate: Redstate::new(),
-        })))
+            node: RedstoneNode::Torch(RedstoneTorch {
+                name: String::from(name),
+                incoming: None,
+                outgoing: Vec::new(),
+            })
+        }))
     }
 
     pub fn dust(name: &str) -> RedstoneRef {
-        Rc::new(RefCell::new(Redstone::Dust(RedstoneDust {
-            name: String::from(name),
-            neighbors: Vec::new(),
-            sources: Vec::new(),
+        Rc::new(RefCell::new(Redstone {
             redstate: Redstate::new(),
-        })))
+            node: RedstoneNode::Dust(RedstoneDust {
+                name: String::from(name),
+                neighbors: Vec::new(),
+                sources: Vec::new(),
+            })
+        }))
     }
 
     pub fn block(name: &str) -> RedstoneRef {
-        Rc::new(RefCell::new(Redstone::Block(Block {
-            name: String::from(name),
-            incoming: Vec::new(),
-            outgoing: Vec::new(),
+        Rc::new(RefCell::new(Redstone {
             redstate: Redstate::new(),
-        })))
+            node: RedstoneNode::Block(Block {
+                name: String::from(name),
+                incoming: Vec::new(),
+                outgoing: Vec::new(),
+            })
+        }))
     }
 
     fn is_directed(&self) -> bool {
-        match self {
-            Redstone::Torch { .. } => true,
-            Redstone::Dust { .. } => false,
-            Redstone::Block { .. } => false,
+        match self.node {
+            RedstoneNode::Torch(..) => true,
+            RedstoneNode::Dust(..) => false,
+            RedstoneNode::Block(..) => false,
         }
     }
 
@@ -95,22 +99,22 @@ impl Redstone {
 }
 
 pub fn link(here: &RedstoneRef, there: &RedstoneRef) {
-    match *here.borrow_mut() {
-        Redstone::Torch(ref mut torch) => {
+    match here.borrow_mut().node {
+        RedstoneNode::Torch(ref mut torch) => {
             assert!(
                 torch.outgoing.len() <= 5,
                 "Torch can only connect up to 5 edges"
             );
             torch.outgoing.push(Rc::clone(there));
         }
-        Redstone::Dust(ref mut dust) => {
+        RedstoneNode::Dust(ref mut dust) => {
             assert!(
                 dust.neighbors.len() <= 6,
                 "Dust can only connect up to 6 edges"
             );
             dust.neighbors.push(Rc::clone(there));
         }
-        Redstone::Block(ref mut block) => {
+        RedstoneNode::Block(ref mut block) => {
             assert!(
                 block.outgoing.len() <= 6,
                 "Dust can only connect up to 6 edges"
@@ -119,12 +123,12 @@ pub fn link(here: &RedstoneRef, there: &RedstoneRef) {
         }
     }
 
-    match *there.borrow_mut() {
-        Redstone::Torch(ref mut torch) => {
+    match there.borrow_mut().node {
+        RedstoneNode::Torch(ref mut torch) => {
             assert!(torch.incoming.is_none());
             torch.incoming = Some(Rc::clone(here));
         }
-        Redstone::Dust(ref mut dust) => {
+        RedstoneNode::Dust(ref mut dust) => {
             if here.borrow().is_undirected() {
                 assert!(
                     dust.neighbors.len() <= 6,
@@ -133,7 +137,7 @@ pub fn link(here: &RedstoneRef, there: &RedstoneRef) {
                 dust.neighbors.push(Rc::clone(here));
             }
         }
-        Redstone::Block(ref mut block) => {
+        RedstoneNode::Block(ref mut block) => {
             assert!(
                 block.incoming.len() <= 6,
                 "block can only connect up to 6 edges"
@@ -144,11 +148,11 @@ pub fn link(here: &RedstoneRef, there: &RedstoneRef) {
 }
 
 pub fn add_weighted_edge(dust: &RedstoneRef, source: &RedstoneRef, weight: u8) {
-    let Redstone::Dust(ref mut dust) = *dust.borrow_mut() else {
+    let RedstoneNode::Dust(ref mut dust) = dust.borrow_mut().node else {
         panic!("`dust` must be a Redstone::Dust");
     };
 
-    if let Redstone::Dust { .. } = *source.borrow() {
+    if let RedstoneNode::Dust(..) = source.borrow().node {
         panic!("`source` cannot be a Redstone::Dust");
     }
 
