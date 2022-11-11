@@ -764,3 +764,59 @@ fn memory_cell_alt() {
     assert!(torch_a.redstate().is_off());
     assert!(torch_b.redstate().is_on());
 }
+
+#[test]
+fn torch_and_dust_and_block_and_repeater() {
+    let torch = Redstone::torch("torch");
+    let dust = Redstone::dust("dust");
+    let block = Redstone::block("block");
+    let repeater = Redstone::repeater("repeater", 1);
+
+    ruststone::link(&torch, &dust);
+    ruststone::link(&dust, &block);
+    ruststone::link(&block, &repeater);
+
+    ruststone::add_weighted_edge(&dust, &torch, 1);
+
+    let cg = ConstraintGraph::collect(torch.clone());
+    assert_eq!(cg.len(), 1);
+    cg.solve_constraints();
+
+    assert_eq!(torch.redstate().get_power(), 16);
+    assert_eq!(dust.redstate().get_power(), 15);
+    assert_eq!(block.redstate().get_power(), 0);
+    assert!(block.redstate().is_forced());
+    assert_eq!(repeater.redstate().get_power(), 16);
+}
+
+#[test]
+fn torch_and_dust_and_block_and_repeater_and_block_and_dust() {
+    let torch = Redstone::torch("torch");
+    let dust1 = Redstone::dust("dust1");
+    let block1 = Redstone::block("block1");
+    let repeater = Redstone::repeater("repeater", 1);
+    let block2 = Redstone::block("block2");
+    let dust2 = Redstone::dust("dust2");
+
+    ruststone::link(&torch, &dust1);
+    ruststone::link(&dust1, &block1);
+    ruststone::link(&block1, &repeater);
+    ruststone::link(&repeater, &block2);
+    ruststone::link(&block2, &dust2);
+
+    ruststone::add_weighted_edge(&dust1, &torch, 1);
+    ruststone::add_weighted_edge(&dust2, &block2, 1);
+
+    let cg = ConstraintGraph::collect(torch.clone());
+    assert_eq!(cg.len(), 1);
+    cg.solve_constraints();
+
+    assert_eq!(torch.redstate().get_power(), 16);
+    assert_eq!(dust1.redstate().get_power(), 15);
+    assert_eq!(block1.redstate().get_power(), 0);
+    assert!(block1.redstate().is_forced());
+    assert_eq!(repeater.redstate().get_power(), 16);
+    assert_eq!(block2.redstate().get_power(), 16);
+    assert!(block2.redstate().is_forced());
+    assert_eq!(dust2.redstate().get_power(), 15);
+}

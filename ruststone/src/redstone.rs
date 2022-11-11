@@ -105,10 +105,42 @@ impl ConstraintDispatch for Block {
     }
 }
 
+pub struct RedstoneRepeater {
+    pub(crate) delay: Frame,
+    pub(crate) incoming: Option<RedstoneRef>,
+    pub(crate) outgoing: Option<RedstoneRef>,
+    // TODO: left and right edges too (locking logic)
+}
+
+impl ConstraintDispatch for RedstoneRepeater {
+    fn dispatch(&self, ctxt: ConstraintCtxt) -> Vec<Rc<Constraint>> {
+        let mut extra = Vec::new();
+
+        let Some(incoming) = &self.incoming else {
+            return extra;
+        };
+
+        ctxt.redstone.redstate().set_forced(incoming.redstate().is_on());
+        ctxt.redstone.redstate().set_power(if incoming.redstate().is_on() { 16 } else { 0 });
+
+        if let Some(outgoing) = &self.outgoing {
+            extra.push(Constraint::new(outgoing.clone(), ctxt.current_frame));
+            extra.push(Constraint::new(outgoing.clone(), ctxt.current_frame + self.dispatch_frame_offset()));
+        }
+
+        extra
+    }
+
+    fn dispatch_frame_offset(&self) -> Frame {
+        self.delay
+    }
+}
+
 pub enum RedstoneNode {
     Torch(RedstoneTorch),
     Dust(RedstoneDust),
     Block(Block),
+    Repeater(RedstoneRepeater),
 }
 
 pub struct Redstone {
@@ -167,11 +199,25 @@ impl Redstone {
         })
     }
 
+    pub fn repeater(name: &str, delay: u8) -> RedstoneRef {
+        assert!((1..=4).contains(&delay));
+        Rc::new(Redstone {
+            name: String::from(name),
+            redstate: Redstate::new(),
+            node: RefCell::new(RedstoneNode::Repeater(RedstoneRepeater {
+                delay: Frame(delay.into()),
+                incoming: None,
+                outgoing: None,
+            })),
+        })
+    }
+
     fn is_directed(&self) -> bool {
         match *self.node() {
             RedstoneNode::Torch(..) => true,
             RedstoneNode::Dust(..) => false,
             RedstoneNode::Block(..) => false,
+            RedstoneNode::Repeater(..) => true,
         }
     }
 
@@ -186,6 +232,7 @@ impl ConstraintDispatch for Redstone {
             RedstoneNode::Torch(torch) => torch.dispatch(ctxt),
             RedstoneNode::Dust(dust) => dust.dispatch(ctxt),
             RedstoneNode::Block(block) => block.dispatch(ctxt),
+            RedstoneNode::Repeater(repeater) => repeater.dispatch(ctxt),
         }
     }
 
@@ -194,6 +241,7 @@ impl ConstraintDispatch for Redstone {
             RedstoneNode::Torch(torch) => torch.dispatch_frame_offset(),
             RedstoneNode::Dust(dust) => dust.dispatch_frame_offset(),
             RedstoneNode::Block(block) => block.dispatch_frame_offset(),
+            RedstoneNode::Repeater(repeater) => repeater.dispatch_frame_offset(),
         }
     }
 }
@@ -201,25 +249,20 @@ impl ConstraintDispatch for Redstone {
 pub fn link(here: &RedstoneRef, there: &RedstoneRef) {
     match &mut *here.node_mut() {
         RedstoneNode::Torch(torch) => {
-            assert!(
-                torch.outgoing.len() <= 5,
-                "Torch can only connect up to 5 edges"
-            );
+            assert!(torch.outgoing.len() <= 5);
             torch.outgoing.push(Rc::clone(there));
         }
         RedstoneNode::Dust(dust) => {
-            assert!(
-                dust.neighbors.len() <= 6,
-                "Dust can only connect up to 6 edges"
-            );
+            assert!(dust.neighbors.len() <= 6);
             dust.neighbors.push(Rc::clone(there));
         }
         RedstoneNode::Block(block) => {
-            assert!(
-                block.outgoing.len() <= 6,
-                "Dust can only connect up to 6 edges"
-            );
+            assert!(block.outgoing.len() <= 6);
             block.outgoing.push(Rc::clone(there));
+        }
+        RedstoneNode::Repeater(repeater) => {
+            assert!(repeater.outgoing.is_none());
+            repeater.outgoing = Some(there.clone());
         }
     }
 
@@ -230,19 +273,19 @@ pub fn link(here: &RedstoneRef, there: &RedstoneRef) {
         }
         RedstoneNode::Dust(dust) => {
             if here.is_undirected() {
-                assert!(
-                    dust.neighbors.len() <= 6,
-                    "Dust can only connect up to 6 edges"
-                );
+                assert!(dust.neighbors.len() <= 6);
                 dust.neighbors.push(Rc::clone(here));
             }
         }
         RedstoneNode::Block(block) => {
-            assert!(
-                block.incoming.len() <= 6,
-                "block can only connect up to 6 edges"
-            );
+            assert!(block.incoming.len() <= 6);
             block.incoming.push(Rc::clone(here));
+        }
+        RedstoneNode::Repeater(repeater) => {
+            if here.is_undirected() {
+                assert!(repeater.incoming.is_none());
+                repeater.incoming = Some(here.clone());
+            }
         }
     }
 }

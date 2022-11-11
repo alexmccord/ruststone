@@ -8,7 +8,7 @@ use std::{
 use crate::{RedstoneNode, RedstoneRef};
 
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-pub(crate) struct Frame(pub(crate) u64);
+pub struct Frame(pub u64);
 
 impl Add for Frame {
     type Output = Frame;
@@ -111,6 +111,15 @@ impl ConstraintGraph {
                     }
 
                     for outgoing in block.outgoing.iter() {
+                        queue.push_back(outgoing.clone());
+                    }
+                }
+                RedstoneNode::Repeater(ref repeater) => {
+                    if let Some(incoming) = &repeater.incoming {
+                        queue.push_back(incoming.clone());
+                    }
+
+                    if let Some(outgoing) = &repeater.outgoing {
                         queue.push_back(outgoing.clone());
                     }
                 }
