@@ -82,7 +82,7 @@ impl Constraint {
                     }
                 }
             }
-            Redstone::NormalBlock {
+            Redstone::Block {
                 ref incoming,
                 ref outgoing,
                 ref redstate,
@@ -169,7 +169,7 @@ impl ConstraintGraph {
                         queue.push_back(source.redstone.clone());
                     }
                 }
-                Redstone::NormalBlock {
+                Redstone::Block {
                     ref incoming,
                     ref outgoing,
                     ..

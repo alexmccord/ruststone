@@ -24,7 +24,7 @@ pub enum Redstone {
         sources: Vec<WeightedEdge>,
         redstate: Redstate,
     },
-    NormalBlock {
+    Block {
         name: String,
         incoming: Vec<RedstoneRef>,
         outgoing: Vec<RedstoneRef>,
@@ -37,7 +37,7 @@ impl Redstone {
         match self {
             Redstone::Dust { name, .. } => name.clone(),
             Redstone::Torch { name, .. } => name.clone(),
-            Redstone::NormalBlock { name, .. } => name.clone(),
+            Redstone::Block { name, .. } => name.clone(),
         }
     }
 
@@ -45,7 +45,7 @@ impl Redstone {
         match self {
             Redstone::Torch { redstate, .. } => redstate,
             Redstone::Dust { redstate, .. } => redstate,
-            Redstone::NormalBlock { redstate, .. } => redstate,
+            Redstone::Block { redstate, .. } => redstate,
         }
     }
 
@@ -67,8 +67,8 @@ impl Redstone {
         }))
     }
 
-    pub fn normal_block(name: &str) -> RedstoneRef {
-        Rc::new(RefCell::new(Redstone::NormalBlock {
+    pub fn block(name: &str) -> RedstoneRef {
+        Rc::new(RefCell::new(Redstone::Block {
             name: String::from(name),
             incoming: Vec::new(),
             outgoing: Vec::new(),
@@ -80,7 +80,7 @@ impl Redstone {
         match self {
             Redstone::Torch { .. } => true,
             Redstone::Dust { .. } => false,
-            Redstone::NormalBlock { .. } => false,
+            Redstone::Block { .. } => false,
         }
     }
 
@@ -103,7 +103,7 @@ pub fn link(here: &RedstoneRef, there: &RedstoneRef) {
             assert!(neighbors.len() <= 6, "Dust can only connect up to 6 edges");
             neighbors.push(Rc::clone(there));
         }
-        Redstone::NormalBlock {
+        Redstone::Block {
             ref mut outgoing, ..
         } => {
             assert!(outgoing.len() <= 6, "Dust can only connect up to 6 edges");
@@ -126,7 +126,7 @@ pub fn link(here: &RedstoneRef, there: &RedstoneRef) {
                 neighbors.push(Rc::clone(here));
             }
         }
-        Redstone::NormalBlock {
+        Redstone::Block {
             ref mut incoming, ..
         } => {
             assert!(
