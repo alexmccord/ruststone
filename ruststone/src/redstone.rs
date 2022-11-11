@@ -1,4 +1,4 @@
-use std::{cell::{RefCell}, rc::Rc};
+use std::{cell::RefCell, rc::Rc};
 
 use crate::Redstate;
 
@@ -57,7 +57,7 @@ impl Redstone {
             node: RedstoneNode::Torch(RedstoneTorch {
                 incoming: RefCell::new(None),
                 outgoing: RefCell::new(Vec::new()),
-            })
+            }),
         })
     }
 
@@ -68,7 +68,7 @@ impl Redstone {
             node: RedstoneNode::Dust(RedstoneDust {
                 neighbors: RefCell::new(Vec::new()),
                 sources: RefCell::new(Vec::new()),
-            })
+            }),
         })
     }
 
@@ -79,7 +79,7 @@ impl Redstone {
             node: RedstoneNode::Block(Block {
                 incoming: RefCell::new(Vec::new()),
                 outgoing: RefCell::new(Vec::new()),
-            })
+            }),
         })
     }
 

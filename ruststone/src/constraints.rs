@@ -4,7 +4,7 @@ use std::{
     rc::Rc,
 };
 
-use crate::{Frame, RedstoneRef, RedstoneNode};
+use crate::{Frame, RedstoneNode, RedstoneRef};
 
 struct Constraint {
     // The next frame this constraint can be dispatched. If `None`, it's dispatchable right away.
@@ -37,11 +37,7 @@ impl Constraint {
             RedstoneNode::Torch(torch) => {
                 match *torch.incoming.borrow() {
                     Some(ref incoming) => self.redstone.redstate().set_power(
-                        if incoming.redstate().is_on() {
-                            0
-                        } else {
-                            16
-                        },
+                        if incoming.redstate().is_on() { 0 } else { 16 },
                         current_frame,
                     ),
                     None => self.redstone.redstate().set_power(16, current_frame),
@@ -62,7 +58,8 @@ impl Constraint {
                     return extra;
                 };
 
-                self.redstone.redstate()
+                self.redstone
+                    .redstate()
                     .set_power(max.get_power().saturating_sub(weight), current_frame);
 
                 for neighbor in dust.neighbors.borrow().iter() {
@@ -82,7 +79,9 @@ impl Constraint {
                     .iter()
                     .any(|r| r.redstate().is_forced());
 
-                self.redstone.redstate().set_forced(has_power, current_frame);
+                self.redstone
+                    .redstate()
+                    .set_forced(has_power, current_frame);
                 self.redstone
                     .redstate()
                     .set_power(if is_forced { 16 } else { 0 }, current_frame);
