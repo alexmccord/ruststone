@@ -4,13 +4,11 @@ use crate::Redstate;
 
 pub(crate) type RedstoneRef = Rc<RefCell<Redstone>>;
 
-#[derive(Clone)]
 pub struct WeightedEdge {
     pub(crate) weight: u8,
     pub(crate) redstone: RedstoneRef,
 }
 
-#[derive(Clone)]
 pub enum Redstone {
     Torch {
         name: String,
