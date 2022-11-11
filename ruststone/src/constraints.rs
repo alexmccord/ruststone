@@ -66,7 +66,7 @@ impl Constraint {
                     .set_power(max.get_power().saturating_sub(weight), current_frame);
 
                 for neighbor in dust.neighbors.borrow().iter() {
-                    if !self.is_created_by(&neighbor) {
+                    if !self.is_created_by(neighbor) {
                         extra.push(Constraint::new(
                             neighbor.clone(),
                             Some(self.redstone.clone()),
@@ -88,7 +88,7 @@ impl Constraint {
                     .set_power(if is_forced { 16 } else { 0 }, current_frame);
 
                 for out in block.outgoing.borrow().iter() {
-                    if !self.is_created_by(&out) {
+                    if !self.is_created_by(out) {
                         extra.push(Constraint::new(out.clone(), Some(self.redstone.clone())));
                     }
                 }
