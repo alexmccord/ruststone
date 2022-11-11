@@ -4,7 +4,7 @@ use std::{
     rc::Rc,
 };
 
-use crate::{Constraint, ConstraintCtxt, ConstraintDispatch, Redstate};
+use crate::{Constraint, ConstraintCtxt, ConstraintDispatch, Frame, Redstate};
 
 pub(crate) type RedstoneRef = Rc<Redstone>;
 
@@ -17,19 +17,23 @@ impl ConstraintDispatch for RedstoneTorch {
     fn dispatch(&self, ctxt: ConstraintCtxt) -> Vec<Rc<Constraint>> {
         let mut extra = Vec::new();
 
-        match self.incoming {
-            Some(ref incoming) => ctxt.redstone.redstate().set_power(
-                if incoming.redstate().is_on() { 0 } else { 16 },
-                ctxt.current_frame,
-            ),
-            None => ctxt.redstone.redstate().set_power(16, ctxt.current_frame),
+        match &self.incoming {
+            Some(incoming) => ctxt
+                .redstone
+                .redstate()
+                .set_power(if incoming.redstate().is_on() { 0 } else { 16 }),
+            None => ctxt.redstone.redstate().set_power(16),
         }
 
         for out in self.outgoing.iter() {
-            extra.push(Constraint::new(out.clone()));
+            extra.push(Constraint::new(out.clone(), ctxt.current_frame));
         }
 
         extra
+    }
+
+    fn dispatch_frame_offset(&self) -> Frame {
+        Frame(1)
     }
 }
 
@@ -50,7 +54,6 @@ impl ConstraintDispatch for RedstoneDust {
         let Some((max, weight)) = self.sources
             .iter()
             .map(|e| (e.redstone.redstate().clone(), e.weight))
-            .filter(|(r, _)| r.updated_frame() == Some(ctxt.current_frame))
             .max_by_key(|(r, w)| r.get_power().saturating_sub(*w))
         else {
             return extra;
@@ -58,13 +61,17 @@ impl ConstraintDispatch for RedstoneDust {
 
         ctxt.redstone
             .redstate()
-            .set_power(max.get_power().saturating_sub(weight), ctxt.current_frame);
+            .set_power(max.get_power().saturating_sub(weight));
 
         for neighbor in self.neighbors.iter() {
-            extra.push(Constraint::new(neighbor.clone()));
+            extra.push(Constraint::new(neighbor.clone(), ctxt.current_frame));
         }
 
         extra
+    }
+
+    fn dispatch_frame_offset(&self) -> Frame {
+        Frame(0)
     }
 }
 
@@ -81,18 +88,20 @@ impl ConstraintDispatch for Block {
         let has_power = self.incoming.iter().any(|r| r.redstate().is_on());
         let is_forced = self.incoming.iter().any(|r| r.redstate().is_forced());
 
+        ctxt.redstone.redstate().set_forced(has_power);
         ctxt.redstone
             .redstate()
-            .set_forced(has_power, ctxt.current_frame);
-        ctxt.redstone
-            .redstate()
-            .set_power(if is_forced { 16 } else { 0 }, ctxt.current_frame);
+            .set_power(if is_forced { 16 } else { 0 });
 
         for out in self.outgoing.iter() {
-            extra.push(Constraint::new(out.clone()));
+            extra.push(Constraint::new(out.clone(), ctxt.current_frame));
         }
 
         extra
+    }
+
+    fn dispatch_frame_offset(&self) -> Frame {
+        Frame(0)
     }
 }
 
@@ -177,6 +186,14 @@ impl ConstraintDispatch for Redstone {
             RedstoneNode::Torch(torch) => torch.dispatch(ctxt),
             RedstoneNode::Dust(dust) => dust.dispatch(ctxt),
             RedstoneNode::Block(block) => block.dispatch(ctxt),
+        }
+    }
+
+    fn dispatch_frame_offset(&self) -> Frame {
+        match &*self.node() {
+            RedstoneNode::Torch(torch) => torch.dispatch_frame_offset(),
+            RedstoneNode::Dust(dust) => dust.dispatch_frame_offset(),
+            RedstoneNode::Block(block) => block.dispatch_frame_offset(),
         }
     }
 }

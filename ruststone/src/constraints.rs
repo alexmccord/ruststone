@@ -1,10 +1,22 @@
 use std::{
-    cell::{Cell, RefCell},
+    cell::RefCell,
     collections::{HashSet, VecDeque},
+    ops::Add,
     rc::Rc,
 };
 
-use crate::{Frame, RedstoneNode, RedstoneRef};
+use crate::{RedstoneNode, RedstoneRef};
+
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub(crate) struct Frame(pub(crate) u64);
+
+impl Add for Frame {
+    type Output = Frame;
+
+    fn add(self, rhs: Frame) -> Self::Output {
+        Frame(self.0 + rhs.0)
+    }
+}
 
 pub(crate) struct ConstraintCtxt {
     pub(crate) current_frame: Frame,
@@ -12,24 +24,21 @@ pub(crate) struct ConstraintCtxt {
 }
 
 pub(crate) struct Constraint {
-    // The next frame this constraint can be dispatched. If `None`, it's dispatchable right away.
-    next_dispatch_frame: Cell<Option<Frame>>,
+    // The next frame this constraint can be dispatched.
+    next_dispatch_frame: Frame,
     redstone: RedstoneRef,
 }
 
 impl Constraint {
-    pub(crate) fn new(redstone: RedstoneRef) -> Rc<Constraint> {
+    pub(crate) fn new(redstone: RedstoneRef, next_dispatch_frame: Frame) -> Rc<Constraint> {
         Rc::new(Constraint {
-            next_dispatch_frame: Cell::new(None),
+            next_dispatch_frame,
             redstone,
         })
     }
 
     fn dispatchable(&self, current_frame: Frame) -> bool {
-        match self.next_dispatch_frame.get() {
-            Some(frame) => frame <= current_frame,
-            None => true,
-        }
+        (self.next_dispatch_frame + self.redstone.dispatch_frame_offset()) <= current_frame
     }
 
     fn dispatch(&self, frame: Frame) -> Vec<Rc<Constraint>> {
@@ -43,6 +52,8 @@ impl Constraint {
 
 pub(crate) trait ConstraintDispatch {
     fn dispatch(&self, ctxt: ConstraintCtxt) -> Vec<Rc<Constraint>>;
+
+    fn dispatch_frame_offset(&self) -> Frame;
 }
 
 pub struct ConstraintGraph {
@@ -74,7 +85,8 @@ impl ConstraintGraph {
 
             match *current.node() {
                 RedstoneNode::Torch(ref torch) => {
-                    cg.constraints.push(Constraint::new(current.clone()));
+                    cg.constraints
+                        .push(Constraint::new(current.clone(), Frame(0)));
 
                     if let Some(incoming) = &torch.incoming {
                         queue.push_back(incoming.clone())
@@ -114,16 +126,7 @@ impl ConstraintGraph {
 
     pub fn solve_constraints(&self) {
         let mut queue = VecDeque::from(self.constraints.clone());
-        let frame = Frame(0); // TODO: will be mutable.
-
-        // If we can solve a constraint in the current frame, then we shouldn't
-        // advance the frame to the next.
-        //
-        // Only if we did not solve one single constraint and there exists a constraint
-        // that can be dispatched in the future can we advance the frame.
-        //
-        // We can probably just save ourselves the work and find the earliest frame
-        // to immediately skip to, in such a case.
+        let mut frame = Frame(0);
 
         let mut deferred = VecDeque::new();
         while !queue.is_empty() {
@@ -152,6 +155,20 @@ impl ConstraintGraph {
                         queue.push_front(e);
                     }
                 }
+            }
+
+            // When the queue is empty, then we're at a point where deferred may have constraints,
+            // in which case we ought to find the earliest dispatchable frame and skip to that.
+            //
+            // We'll terminate only when both queue and deferred is empty.
+            if queue.is_empty() && !deferred.is_empty() {
+                let earliest_dispatchable_frame = deferred
+                    .iter()
+                    .map(|c| c.next_dispatch_frame + c.redstone.dispatch_frame_offset())
+                    .min();
+                frame = earliest_dispatchable_frame.unwrap();
+
+                self.push_event("advancing to frame ".to_owned() + frame.0.to_string().as_str());
             }
 
             queue = deferred;
