@@ -125,12 +125,19 @@ impl ConstraintDispatch for RedstoneRepeater {
             return extra;
         };
 
-        ctxt.redstone.redstate().set_forced(incoming.redstate().is_on());
-        ctxt.redstone.redstate().set_power(if incoming.redstate().is_on() { 16 } else { 0 });
+        ctxt.redstone
+            .redstate()
+            .set_forced(incoming.redstate().is_on());
+        ctxt.redstone
+            .redstate()
+            .set_power(if incoming.redstate().is_on() { 16 } else { 0 });
 
         if let Some(outgoing) = &self.outgoing {
             extra.push(Constraint::new(outgoing.clone(), ctxt.current_frame));
-            extra.push(Constraint::new(outgoing.clone(), ctxt.current_frame + self.dispatch_frame_offset()));
+            extra.push(Constraint::new(
+                outgoing.clone(),
+                ctxt.current_frame + self.dispatch_frame_offset(),
+            ));
         }
 
         extra
