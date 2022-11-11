@@ -5,7 +5,6 @@ use crate::Redstate;
 pub(crate) type RedstoneRef = Rc<RefCell<Redstone>>;
 
 pub(crate) struct RedstoneTorch {
-    pub(crate) name: String,
     pub(crate) incoming: Option<RedstoneRef>,
     pub(crate) outgoing: Vec<RedstoneRef>,
 }
@@ -16,19 +15,18 @@ pub(crate) struct WeightedEdge {
 }
 
 pub(crate) struct RedstoneDust {
-    pub(crate) name: String,
     pub(crate) neighbors: Vec<RedstoneRef>,
     pub(crate) sources: Vec<WeightedEdge>,
 }
 
 // Not the Redstone Block! It's just a block like Sandstone.
 pub(crate) struct Block {
-    pub(crate) name: String,
     pub(crate) incoming: Vec<RedstoneRef>,
     pub(crate) outgoing: Vec<RedstoneRef>,
 }
 
 pub struct Redstone {
+    pub(crate) name: String,
     pub(crate) redstate: Redstate,
     pub(crate) node: RedstoneNode,
 }
@@ -41,11 +39,7 @@ pub(crate) enum RedstoneNode {
 
 impl Redstone {
     pub fn name(&self) -> String {
-        match &self.node {
-            RedstoneNode::Torch(torch) => torch.name.clone(),
-            RedstoneNode::Dust(dust) => dust.name.clone(),
-            RedstoneNode::Block(block) => block.name.clone(),
-        }
+        self.name.clone()
     }
 
     pub fn redstate(&self) -> &Redstate {
@@ -54,9 +48,9 @@ impl Redstone {
 
     pub fn torch(name: &str) -> RedstoneRef {
         Rc::new(RefCell::new(Redstone {
+            name: String::from(name),
             redstate: Redstate::new(),
             node: RedstoneNode::Torch(RedstoneTorch {
-                name: String::from(name),
                 incoming: None,
                 outgoing: Vec::new(),
             })
@@ -65,9 +59,9 @@ impl Redstone {
 
     pub fn dust(name: &str) -> RedstoneRef {
         Rc::new(RefCell::new(Redstone {
+            name: String::from(name),
             redstate: Redstate::new(),
             node: RedstoneNode::Dust(RedstoneDust {
-                name: String::from(name),
                 neighbors: Vec::new(),
                 sources: Vec::new(),
             })
@@ -76,9 +70,9 @@ impl Redstone {
 
     pub fn block(name: &str) -> RedstoneRef {
         Rc::new(RefCell::new(Redstone {
+            name: String::from(name),
             redstate: Redstate::new(),
             node: RedstoneNode::Block(Block {
-                name: String::from(name),
                 incoming: Vec::new(),
                 outgoing: Vec::new(),
             })
