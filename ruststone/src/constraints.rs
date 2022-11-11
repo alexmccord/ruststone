@@ -33,39 +33,40 @@ impl Constraint {
         assert!(self.dispatchable(current_frame));
         let mut extra = Vec::new();
 
-        match &self.redstone.borrow().node {
+        match self.redstone.node() {
             RedstoneNode::Torch(torch) => {
-                match &torch.incoming {
-                    Some(incoming) => self.redstone.borrow().redstate.set_power(
-                        if incoming.borrow().redstate().is_on() {
+                match *torch.incoming.borrow() {
+                    Some(ref incoming) => self.redstone.redstate().set_power(
+                        if incoming.redstate().is_on() {
                             0
                         } else {
                             16
                         },
                         current_frame,
                     ),
-                    None => self.redstone.borrow().redstate.set_power(16, current_frame),
+                    None => self.redstone.redstate().set_power(16, current_frame),
                 }
 
-                for out in &torch.outgoing {
+                for out in torch.outgoing.borrow().iter() {
                     extra.push(Constraint::new(out.clone(), Some(self.redstone.clone())))
                 }
             }
-            RedstoneNode::Dust(ref dust) => {
+            RedstoneNode::Dust(dust) => {
                 let Some((max, weight)) = dust.sources
+                    .borrow()
                     .iter()
-                    .map(|e| (e.redstone.borrow().redstate().clone(), e.weight))
+                    .map(|e| (e.redstone.redstate().clone(), e.weight))
                     .filter(|(r, _)| r.updated_frame() == Some(current_frame))
                     .max_by_key(|(r, w)| r.get_power().saturating_sub(*w))
                 else {
                     return extra;
                 };
 
-                self.redstone.borrow().redstate
+                self.redstone.redstate()
                     .set_power(max.get_power().saturating_sub(weight), current_frame);
 
-                for neighbor in &dust.neighbors {
-                    if !self.is_created_by(neighbor) {
+                for neighbor in dust.neighbors.borrow().iter() {
+                    if !self.is_created_by(&neighbor) {
                         extra.push(Constraint::new(
                             neighbor.clone(),
                             Some(self.redstone.clone()),
@@ -73,20 +74,21 @@ impl Constraint {
                     }
                 }
             }
-            RedstoneNode::Block(ref block) => {
-                let has_power = block.incoming.iter().any(|r| r.borrow().redstate().is_on());
+            RedstoneNode::Block(block) => {
+                let has_power = block.incoming.borrow().iter().any(|r| r.redstate().is_on());
                 let is_forced = block
                     .incoming
+                    .borrow()
                     .iter()
-                    .any(|r| r.borrow().redstate().is_forced());
+                    .any(|r| r.redstate().is_forced());
 
-                self.redstone.borrow().redstate.set_forced(has_power, current_frame);
-                self.redstone.borrow()
-                    .redstate
+                self.redstone.redstate().set_forced(has_power, current_frame);
+                self.redstone
+                    .redstate()
                     .set_power(if is_forced { 16 } else { 0 }, current_frame);
 
-                for out in &block.outgoing {
-                    if !self.is_created_by(out) {
+                for out in block.outgoing.borrow().iter() {
+                    if !self.is_created_by(&out) {
                         extra.push(Constraint::new(out.clone(), Some(self.redstone.clone())));
                     }
                 }
@@ -131,33 +133,33 @@ impl ConstraintGraph {
 
             visited.insert(Rc::as_ptr(&current));
 
-            match current.borrow().node {
-                RedstoneNode::Torch(ref torch) => {
+            match current.node() {
+                RedstoneNode::Torch(torch) => {
                     cg.constraints.push(Constraint::new(current.clone(), None));
 
-                    if let Some(incoming) = &torch.incoming {
+                    if let Some(ref incoming) = *torch.incoming.borrow() {
                         queue.push_back(incoming.clone())
                     }
 
-                    for outgoing in &torch.outgoing {
+                    for outgoing in torch.outgoing.borrow().iter() {
                         queue.push_back(outgoing.clone());
                     }
                 }
-                RedstoneNode::Dust(ref dust) => {
-                    for neighbor in &dust.neighbors {
+                RedstoneNode::Dust(dust) => {
+                    for neighbor in dust.neighbors.borrow().iter() {
                         queue.push_back(neighbor.clone());
                     }
 
-                    for source in &dust.sources {
+                    for source in dust.sources.borrow().iter() {
                         queue.push_back(source.redstone.clone());
                     }
                 }
-                RedstoneNode::Block(ref block) => {
-                    for incoming in &block.incoming {
+                RedstoneNode::Block(block) => {
+                    for incoming in block.incoming.borrow().iter() {
                         queue.push_back(incoming.clone());
                     }
 
-                    for outgoing in &block.outgoing {
+                    for outgoing in block.outgoing.borrow().iter() {
                         queue.push_back(outgoing.clone());
                     }
                 }
@@ -188,16 +190,16 @@ impl ConstraintGraph {
         while !queue.is_empty() {
             while let Some(c) = queue.pop_front() {
                 if !c.dispatchable(frame) {
-                    self.push_event(c.redstone.borrow().name() + " was deferred!");
+                    self.push_event(c.redstone.name() + " was deferred!");
                     deferred.push_back(c);
                     continue;
                 }
 
-                let previous_state = c.redstone.borrow().redstate().clone();
+                let previous_state = c.redstone.redstate().clone();
                 let extra_constraints = c.dispatch(frame);
-                let new_state = c.redstone.borrow().redstate().clone();
+                let new_state = c.redstone.redstate().clone();
 
-                self.push_event(c.redstone.borrow().name() + " was dispatched!");
+                self.push_event(c.redstone.name() + " was dispatched!");
                 self.push_event(
                     previous_state.is_on().to_string() + " to " + &new_state.is_on().to_string(),
                 );

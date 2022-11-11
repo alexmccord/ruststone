@@ -13,8 +13,8 @@ fn torch_and_dust() {
     assert_eq!(cg.len(), 1);
     cg.solve_constraints();
 
-    assert_eq!(torch.borrow().redstate().get_power(), 16);
-    assert_eq!(dust.borrow().redstate().get_power(), 15);
+    assert_eq!(torch.redstate().get_power(), 16);
+    assert_eq!(dust.redstate().get_power(), 15);
 }
 
 #[test]
@@ -36,10 +36,10 @@ fn torch_and_dust_and_dust_and_dust() {
     assert_eq!(cg.len(), 1);
     cg.solve_constraints();
 
-    assert_eq!(torch.borrow().redstate().get_power(), 16);
-    assert_eq!(dust1.borrow().redstate().get_power(), 15);
-    assert_eq!(dust2.borrow().redstate().get_power(), 14);
-    assert_eq!(dust3.borrow().redstate().get_power(), 13);
+    assert_eq!(torch.redstate().get_power(), 16);
+    assert_eq!(dust1.redstate().get_power(), 15);
+    assert_eq!(dust2.redstate().get_power(), 14);
+    assert_eq!(dust3.redstate().get_power(), 13);
 }
 
 #[test]
@@ -103,10 +103,10 @@ fn torch_and_dust_until_it_runs_out_of_redpower() {
     assert_eq!(cg.len(), 1);
     cg.solve_constraints();
 
-    assert_eq!(torch.borrow().redstate().get_power(), 16);
-    assert_eq!(dust15.borrow().redstate().get_power(), 1);
-    assert_eq!(dust16.borrow().redstate().get_power(), 0);
-    assert_eq!(dust17.borrow().redstate().get_power(), 0);
+    assert_eq!(torch.redstate().get_power(), 16);
+    assert_eq!(dust15.redstate().get_power(), 1);
+    assert_eq!(dust16.redstate().get_power(), 0);
+    assert_eq!(dust17.redstate().get_power(), 0);
 }
 
 #[test]
@@ -142,13 +142,13 @@ fn dust_in_the_middle_of_two_torches() {
     assert_eq!(cg.len(), 2);
     cg.solve_constraints();
 
-    assert_eq!(torch_l.borrow().redstate().get_power(), 16);
-    assert_eq!(dust1.borrow().redstate().get_power(), 15);
-    assert_eq!(dust2.borrow().redstate().get_power(), 14);
-    assert_eq!(dust3.borrow().redstate().get_power(), 13);
-    assert_eq!(dust4.borrow().redstate().get_power(), 14);
-    assert_eq!(dust5.borrow().redstate().get_power(), 15);
-    assert_eq!(torch_r.borrow().redstate().get_power(), 16);
+    assert_eq!(torch_l.redstate().get_power(), 16);
+    assert_eq!(dust1.redstate().get_power(), 15);
+    assert_eq!(dust2.redstate().get_power(), 14);
+    assert_eq!(dust3.redstate().get_power(), 13);
+    assert_eq!(dust4.redstate().get_power(), 14);
+    assert_eq!(dust5.redstate().get_power(), 15);
+    assert_eq!(torch_r.redstate().get_power(), 16);
 }
 
 #[test]
@@ -168,11 +168,11 @@ fn torch_is_off_if_its_incoming_edge_is_on() {
     assert_eq!(cg.len(), 2);
     cg.solve_constraints();
 
-    assert_eq!(torch.borrow().redstate().get_power(), 16);
-    assert_eq!(dust.borrow().redstate().get_power(), 15);
-    assert_eq!(normal_block.borrow().redstate().get_power(), 0);
-    assert!(normal_block.borrow().redstate().is_forced());
-    assert_eq!(output.borrow().redstate().get_power(), 0);
+    assert_eq!(torch.redstate().get_power(), 16);
+    assert_eq!(dust.redstate().get_power(), 15);
+    assert_eq!(normal_block.redstate().get_power(), 0);
+    assert!(normal_block.redstate().is_forced());
+    assert_eq!(output.redstate().get_power(), 0);
 }
 
 #[test]
@@ -192,11 +192,11 @@ fn torch_and_dust_and_block_and_dust() {
     assert_eq!(cg.len(), 1);
     cg.solve_constraints();
 
-    assert_eq!(torch.borrow().redstate().get_power(), 16);
-    assert_eq!(dust1.borrow().redstate().get_power(), 15);
-    assert_eq!(normal_block.borrow().redstate().get_power(), 0);
-    assert!(normal_block.borrow().redstate().is_forced());
-    assert_eq!(dust2.borrow().redstate().get_power(), 0);
+    assert_eq!(torch.redstate().get_power(), 16);
+    assert_eq!(dust1.redstate().get_power(), 15);
+    assert_eq!(normal_block.redstate().get_power(), 0);
+    assert!(normal_block.redstate().is_forced());
+    assert_eq!(dust2.redstate().get_power(), 0);
 }
 
 #[test]
@@ -238,11 +238,11 @@ fn and_gate() {
     assert_eq!(cg.len(), 5);
     cg.solve_constraints();
 
-    assert!(input_l.borrow().redstate().is_on());
-    assert!(input_r.borrow().redstate().is_on());
-    assert!(and_l.borrow().redstate().is_off());
-    assert!(and_r.borrow().redstate().is_off());
-    assert!(output.borrow().redstate().is_on());
+    assert!(input_l.redstate().is_on());
+    assert!(input_r.redstate().is_on());
+    assert!(and_l.redstate().is_off());
+    assert!(and_r.redstate().is_off());
+    assert!(output.redstate().is_on());
 }
 
 #[test]
@@ -281,10 +281,10 @@ fn and_gate_with_one_arm_off() {
     assert_eq!(cg.len(), 4);
     cg.solve_constraints();
 
-    assert!(input_r.borrow().redstate().is_on());
-    assert!(and_l.borrow().redstate().is_on());
-    assert!(and_r.borrow().redstate().is_off());
-    assert!(output.borrow().redstate().is_off());
+    assert!(input_r.redstate().is_on());
+    assert!(and_l.redstate().is_on());
+    assert!(and_r.redstate().is_off());
+    assert!(output.redstate().is_off());
 }
 
 #[test]
@@ -320,9 +320,9 @@ fn and_gate_with_both_arms_off() {
     assert_eq!(cg.len(), 3);
     cg.solve_constraints();
 
-    assert!(and_l.borrow().redstate().is_on());
-    assert!(and_r.borrow().redstate().is_on());
-    assert!(output.borrow().redstate().is_off());
+    assert!(and_l.redstate().is_on());
+    assert!(and_r.redstate().is_on());
+    assert!(output.redstate().is_off());
 }
 
 #[test]
@@ -409,16 +409,16 @@ fn xor_gate() {
     assert_eq!(cg.len(), 9);
     cg.solve_constraints();
 
-    assert!(input_l.borrow().redstate().is_on());
-    assert!(input_r.borrow().redstate().is_on());
-    assert!(torch_on_top_block_l.borrow().redstate().is_off());
-    assert!(torch_on_top_block_r.borrow().redstate().is_off());
-    assert!(torch_in_front_block_l.borrow().redstate().is_off());
-    assert!(torch_in_front_block_r.borrow().redstate().is_off());
-    assert!(inversion_of_and.borrow().redstate().is_on());
-    assert!(torch_after_dust_inversion_l.borrow().redstate().is_off());
-    assert!(torch_after_dust_inversion_r.borrow().redstate().is_off());
-    assert!(output.borrow().redstate().is_off());
+    assert!(input_l.redstate().is_on());
+    assert!(input_r.redstate().is_on());
+    assert!(torch_on_top_block_l.redstate().is_off());
+    assert!(torch_on_top_block_r.redstate().is_off());
+    assert!(torch_in_front_block_l.redstate().is_off());
+    assert!(torch_in_front_block_r.redstate().is_off());
+    assert!(inversion_of_and.redstate().is_on());
+    assert!(torch_after_dust_inversion_l.redstate().is_off());
+    assert!(torch_after_dust_inversion_r.redstate().is_off());
+    assert!(output.redstate().is_off());
 }
 
 #[test]
@@ -502,15 +502,15 @@ fn xor_gate_with_left_off() {
     assert_eq!(cg.len(), 8);
     cg.solve_constraints();
 
-    assert!(input_r.borrow().redstate().is_on());
-    assert!(torch_on_top_block_l.borrow().redstate().is_on());
-    assert!(torch_on_top_block_r.borrow().redstate().is_off());
-    assert!(torch_in_front_block_l.borrow().redstate().is_on());
-    assert!(torch_in_front_block_r.borrow().redstate().is_off());
-    assert!(inversion_of_and.borrow().redstate().is_off());
-    assert!(torch_after_dust_inversion_l.borrow().redstate().is_off());
-    assert!(torch_after_dust_inversion_r.borrow().redstate().is_on());
-    assert!(output.borrow().redstate().is_on());
+    assert!(input_r.redstate().is_on());
+    assert!(torch_on_top_block_l.redstate().is_on());
+    assert!(torch_on_top_block_r.redstate().is_off());
+    assert!(torch_in_front_block_l.redstate().is_on());
+    assert!(torch_in_front_block_r.redstate().is_off());
+    assert!(inversion_of_and.redstate().is_off());
+    assert!(torch_after_dust_inversion_l.redstate().is_off());
+    assert!(torch_after_dust_inversion_r.redstate().is_on());
+    assert!(output.redstate().is_on());
 }
 
 #[test]
@@ -594,15 +594,15 @@ fn xor_gate_with_right_off() {
     assert_eq!(cg.len(), 8);
     cg.solve_constraints();
 
-    assert!(input_l.borrow().redstate().is_on());
-    assert!(torch_on_top_block_l.borrow().redstate().is_off());
-    assert!(torch_on_top_block_r.borrow().redstate().is_on());
-    assert!(torch_in_front_block_l.borrow().redstate().is_off());
-    assert!(torch_in_front_block_r.borrow().redstate().is_on());
-    assert!(inversion_of_and.borrow().redstate().is_off());
-    assert!(torch_after_dust_inversion_l.borrow().redstate().is_on());
-    assert!(torch_after_dust_inversion_r.borrow().redstate().is_off());
-    assert!(output.borrow().redstate().is_on());
+    assert!(input_l.redstate().is_on());
+    assert!(torch_on_top_block_l.redstate().is_off());
+    assert!(torch_on_top_block_r.redstate().is_on());
+    assert!(torch_in_front_block_l.redstate().is_off());
+    assert!(torch_in_front_block_r.redstate().is_on());
+    assert!(inversion_of_and.redstate().is_off());
+    assert!(torch_after_dust_inversion_l.redstate().is_on());
+    assert!(torch_after_dust_inversion_r.redstate().is_off());
+    assert!(output.redstate().is_on());
 }
 
 #[test]
@@ -683,14 +683,14 @@ fn xor_gate_with_both_off() {
     assert_eq!(cg.len(), 7);
     cg.solve_constraints();
 
-    assert!(torch_on_top_block_l.borrow().redstate().is_on());
-    assert!(torch_on_top_block_r.borrow().redstate().is_on());
-    assert!(torch_in_front_block_l.borrow().redstate().is_on());
-    assert!(torch_in_front_block_r.borrow().redstate().is_on());
-    assert!(inversion_of_and.borrow().redstate().is_off());
-    assert!(torch_after_dust_inversion_l.borrow().redstate().is_off());
-    assert!(torch_after_dust_inversion_r.borrow().redstate().is_off());
-    assert!(output.borrow().redstate().is_off());
+    assert!(torch_on_top_block_l.redstate().is_on());
+    assert!(torch_on_top_block_r.redstate().is_on());
+    assert!(torch_in_front_block_l.redstate().is_on());
+    assert!(torch_in_front_block_r.redstate().is_on());
+    assert!(inversion_of_and.redstate().is_off());
+    assert!(torch_after_dust_inversion_l.redstate().is_off());
+    assert!(torch_after_dust_inversion_r.redstate().is_off());
+    assert!(output.redstate().is_off());
 }
 
 #[test]
@@ -725,8 +725,8 @@ fn memory_cell() {
     assert_eq!(cg.len(), 2);
     cg.solve_constraints();
 
-    assert!(torch_a.borrow().redstate().is_on());
-    assert!(torch_b.borrow().redstate().is_off());
+    assert!(torch_a.redstate().is_on());
+    assert!(torch_b.redstate().is_off());
 }
 
 #[test]
@@ -761,6 +761,6 @@ fn memory_cell_alt() {
     assert_eq!(cg.len(), 2);
     cg.solve_constraints();
 
-    assert!(torch_a.borrow().redstate().is_off());
-    assert!(torch_b.borrow().redstate().is_on());
+    assert!(torch_a.redstate().is_off());
+    assert!(torch_b.redstate().is_on());
 }
