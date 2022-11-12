@@ -1,12 +1,13 @@
 use std::{
     cell::RefCell,
+    fmt::Display,
     ops::{Deref, DerefMut},
     rc::Rc,
 };
 
 use crate::{Constraint, ConstraintCtxt, ConstraintDispatch, Frame, Redstate};
 
-pub(crate) type RedstoneRef = Rc<Redstone>;
+pub type RedstoneRef = Rc<Redstone>;
 
 pub struct RedstoneTorch {
     pub(crate) incoming: Option<RedstoneRef>,
@@ -37,31 +38,26 @@ impl ConstraintDispatch for RedstoneTorch {
     }
 }
 
-pub(crate) struct WeightedEdge {
-    pub(crate) weight: u8,
-    pub(crate) redstone: RedstoneRef,
-}
-
 pub struct RedstoneDust {
     pub(crate) neighbors: Vec<RedstoneRef>,
-    pub(crate) sources: Vec<WeightedEdge>,
+    pub(crate) sources: Vec<(u8, RedstoneRef)>,
 }
 
 impl ConstraintDispatch for RedstoneDust {
     fn dispatch(&self, ctxt: ConstraintCtxt) -> Vec<Rc<Constraint>> {
         let mut extra = Vec::new();
 
-        let Some((max, weight)) = self.sources
+        let Some((weight, redstate)) = self.sources
             .iter()
-            .map(|e| (e.redstone.redstate().clone(), e.weight))
-            .max_by_key(|(r, w)| r.get_power().saturating_sub(*w))
+            .map(|(w, r)| (w, r.redstate()))
+            .max_by_key(|(&w, r)| r.get_power().saturating_sub(w))
         else {
             return extra;
         };
 
         ctxt.redstone
             .redstate()
-            .set_power(max.get_power().saturating_sub(weight));
+            .set_power(redstate.get_power().saturating_sub(*weight));
 
         for neighbor in self.neighbors.iter() {
             extra.push(Constraint::new(neighbor.clone(), ctxt.current_frame));
@@ -239,6 +235,12 @@ impl Redstone {
     }
 }
 
+impl Display for Redstone {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.name().as_str())
+    }
+}
+
 impl ConstraintDispatch for Redstone {
     fn dispatch(&self, ctxt: ConstraintCtxt) -> Vec<Rc<Constraint>> {
         match &*self.node() {
@@ -312,10 +314,7 @@ pub fn add_weighted_edge(dust: &RedstoneRef, source: &RedstoneRef, weight: u8) {
         panic!("`source` cannot be a RedstoneDust");
     }
 
-    dust.sources.push(WeightedEdge {
-        weight,
-        redstone: source.clone(),
-    });
+    dust.sources.push((weight, source.clone()));
 }
 
 pub fn lock(repeater: &RedstoneRef, edge: &RedstoneRef) {

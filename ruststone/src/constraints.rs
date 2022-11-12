@@ -56,6 +56,26 @@ pub(crate) trait ConstraintDispatch {
     fn dispatch_frame_offset(&self) -> Frame;
 }
 
+struct ConstraintSolvingEvent<'a>(String, &'a RefCell<Vec<String>>);
+
+impl<'a> ConstraintSolvingEvent<'a> {
+    fn new(vec: &'a RefCell<Vec<String>>) -> ConstraintSolvingEvent {
+        ConstraintSolvingEvent(String::new(), vec)
+    }
+
+    fn write<T: ToString>(self, str: T) -> ConstraintSolvingEvent<'a> {
+        if self.0.is_empty() {
+            ConstraintSolvingEvent(str.to_string(), self.1)
+        } else {
+            ConstraintSolvingEvent(self.0 + " " + &str.to_string(), self.1)
+        }
+    }
+
+    fn push(self) {
+        self.1.borrow_mut().push(self.0)
+    }
+}
+
 pub struct ConstraintGraph {
     constraints: Vec<Rc<Constraint>>,
     events: RefCell<Vec<String>>,
@@ -101,8 +121,8 @@ impl ConstraintGraph {
                         queue.push_back(neighbor.clone());
                     }
 
-                    for source in dust.sources.iter() {
-                        queue.push_back(source.redstone.clone());
+                    for (_, source) in dust.sources.iter() {
+                        queue.push_back(source.clone());
                     }
                 }
                 RedstoneNode::Block(ref block) => {
@@ -148,7 +168,10 @@ impl ConstraintGraph {
         while !queue.is_empty() {
             while let Some(c) = queue.pop_front() {
                 if !c.dispatchable(frame) {
-                    self.push_event(c.redstone.name() + " was deferred!");
+                    self.new_event()
+                        .write(&c.redstone)
+                        .write("was deferred")
+                        .push();
                     deferred.push_back(c);
                     continue;
                 }
@@ -157,15 +180,19 @@ impl ConstraintGraph {
                 let extra_constraints = c.dispatch(frame);
                 let new_state = c.redstone.redstate().clone();
 
-                self.push_event(c.redstone.name() + " was dispatched!");
-                self.push_event(
-                    previous_state.is_on().to_string() + " to " + &new_state.is_on().to_string(),
-                );
+                self.new_event()
+                    .write(&c.redstone)
+                    .write("was dispatched, previously")
+                    .write(previous_state.is_on())
+                    .write("and now")
+                    .write(new_state.is_on())
+                    .push();
 
                 if previous_state != new_state {
-                    self.push_event(
-                        extra_constraints.len().to_string() + " new constraints queued",
-                    );
+                    self.new_event()
+                        .write(extra_constraints.len())
+                        .write("new constraints queued")
+                        .push();
 
                     for e in extra_constraints {
                         queue.push_front(e);
@@ -184,7 +211,10 @@ impl ConstraintGraph {
                     .min();
                 frame = earliest_dispatchable_frame.unwrap();
 
-                self.push_event("advancing to frame ".to_owned() + frame.0.to_string().as_str());
+                self.new_event()
+                    .write("advancing to frame")
+                    .write(frame.0)
+                    .push();
             }
 
             queue = deferred;
@@ -192,7 +222,7 @@ impl ConstraintGraph {
         }
     }
 
-    fn push_event(&self, event: String) {
-        self.events.borrow_mut().push(event)
+    fn new_event(&self) -> ConstraintSolvingEvent {
+        ConstraintSolvingEvent::new(&self.events)
     }
 }
