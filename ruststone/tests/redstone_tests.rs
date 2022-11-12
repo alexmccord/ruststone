@@ -10,7 +10,6 @@ fn torch_and_dust() {
     ruststone::add_weighted_edge(&dust, &torch, 1);
 
     let cg = ConstraintGraph::collect(torch.clone());
-    assert_eq!(cg.len(), 1);
     cg.solve_constraints();
 
     assert_eq!(torch.redstate().get_power(), 16);
@@ -33,7 +32,6 @@ fn torch_and_dust_and_dust_and_dust() {
     ruststone::add_weighted_edge(&dust3, &torch, 3);
 
     let cg = ConstraintGraph::collect(torch.clone());
-    assert_eq!(cg.len(), 1);
     cg.solve_constraints();
 
     assert_eq!(torch.redstate().get_power(), 16);
@@ -100,7 +98,6 @@ fn torch_and_dust_until_it_runs_out_of_redpower() {
     ruststone::add_weighted_edge(&dust17, &torch, 17);
 
     let cg = ConstraintGraph::collect(torch.clone());
-    assert_eq!(cg.len(), 1);
     cg.solve_constraints();
 
     assert_eq!(torch.redstate().get_power(), 16);
@@ -139,7 +136,6 @@ fn dust_in_the_middle_of_two_torches() {
     ruststone::add_weighted_edge(&dust1, &torch_r, 5);
 
     let cg = ConstraintGraph::collect(torch_l.clone());
-    assert_eq!(cg.len(), 2);
     cg.solve_constraints();
 
     assert_eq!(torch_l.redstate().get_power(), 16);
@@ -165,7 +161,6 @@ fn torch_is_off_if_its_incoming_edge_is_on() {
     ruststone::add_weighted_edge(&dust, &torch, 1);
 
     let cg = ConstraintGraph::collect(torch.clone());
-    assert_eq!(cg.len(), 2);
     cg.solve_constraints();
 
     assert_eq!(torch.redstate().get_power(), 16);
@@ -189,7 +184,6 @@ fn torch_and_dust_and_block_and_dust() {
     ruststone::add_weighted_edge(&dust1, &torch, 1);
 
     let cg = ConstraintGraph::collect(torch.clone());
-    assert_eq!(cg.len(), 1);
     cg.solve_constraints();
 
     assert_eq!(torch.redstate().get_power(), 16);
@@ -235,7 +229,6 @@ fn and_gate() {
     ruststone::add_weighted_edge(&dust_m, &and_r, 1);
 
     let cg = ConstraintGraph::collect(output.clone());
-    assert_eq!(cg.len(), 5);
     cg.solve_constraints();
 
     assert!(input_l.redstate().is_on());
@@ -278,7 +271,6 @@ fn and_gate_with_one_arm_off() {
     ruststone::add_weighted_edge(&dust_m, &and_r, 1);
 
     let cg = ConstraintGraph::collect(output.clone());
-    assert_eq!(cg.len(), 4);
     cg.solve_constraints();
 
     assert!(input_r.redstate().is_on());
@@ -317,7 +309,6 @@ fn and_gate_with_both_arms_off() {
     ruststone::add_weighted_edge(&dust_m, &and_r, 1);
 
     let cg = ConstraintGraph::collect(output.clone());
-    assert_eq!(cg.len(), 3);
     cg.solve_constraints();
 
     assert!(and_l.redstate().is_on());
@@ -406,7 +397,6 @@ fn xor_gate() {
     ruststone::add_weighted_edge(&output, &torch_after_dust_inversion_r, 1);
 
     let cg = ConstraintGraph::collect(output.clone());
-    assert_eq!(cg.len(), 9);
     cg.solve_constraints();
 
     assert!(input_l.redstate().is_on());
@@ -499,7 +489,6 @@ fn xor_gate_with_left_off() {
     ruststone::add_weighted_edge(&output, &torch_after_dust_inversion_r, 1);
 
     let cg = ConstraintGraph::collect(output.clone());
-    assert_eq!(cg.len(), 8);
     cg.solve_constraints();
 
     assert!(input_r.redstate().is_on());
@@ -591,7 +580,6 @@ fn xor_gate_with_right_off() {
     ruststone::add_weighted_edge(&output, &torch_after_dust_inversion_r, 1);
 
     let cg = ConstraintGraph::collect(output.clone());
-    assert_eq!(cg.len(), 8);
     cg.solve_constraints();
 
     assert!(input_l.redstate().is_on());
@@ -680,7 +668,6 @@ fn xor_gate_with_both_off() {
     ruststone::add_weighted_edge(&output, &torch_after_dust_inversion_r, 1);
 
     let cg = ConstraintGraph::collect(output.clone());
-    assert_eq!(cg.len(), 7);
     cg.solve_constraints();
 
     assert!(torch_on_top_block_l.redstate().is_on());
@@ -722,7 +709,6 @@ fn memory_cell() {
     ruststone::add_weighted_edge(&dust_b2, &torch_b, 2);
 
     let cg = ConstraintGraph::collect(block_a);
-    assert_eq!(cg.len(), 2);
     cg.solve_constraints();
 
     assert!(torch_a.redstate().is_on());
@@ -758,7 +744,6 @@ fn memory_cell_alt() {
     ruststone::add_weighted_edge(&dust_b2, &torch_b, 2);
 
     let cg = ConstraintGraph::collect(block_b);
-    assert_eq!(cg.len(), 2);
     cg.solve_constraints();
 
     assert!(torch_a.redstate().is_off());
@@ -779,7 +764,6 @@ fn torch_and_dust_and_block_and_repeater() {
     ruststone::add_weighted_edge(&dust, &torch, 1);
 
     let cg = ConstraintGraph::collect(torch.clone());
-    assert_eq!(cg.len(), 1);
     cg.solve_constraints();
 
     assert_eq!(torch.redstate().get_power(), 16);
@@ -808,7 +792,6 @@ fn torch_and_dust_and_block_and_repeater_and_block_and_dust() {
     ruststone::add_weighted_edge(&dust2, &block2, 1);
 
     let cg = ConstraintGraph::collect(torch.clone());
-    assert_eq!(cg.len(), 1);
     cg.solve_constraints();
 
     assert_eq!(torch.redstate().get_power(), 16);
@@ -856,7 +839,6 @@ fn repeater_locked_by_its_neighbor() {
     ruststone::lock(&throughput, &locker);
 
     let cg = ConstraintGraph::collect(output.clone());
-    assert_eq!(cg.len(), 1);
     cg.solve_constraints();
 
     assert!(torch.redstate().is_on());
@@ -904,7 +886,6 @@ fn repeater_locked_by_its_slower_neighbor() {
     ruststone::lock(&throughput, &locker);
 
     let cg = ConstraintGraph::collect(output.clone());
-    assert_eq!(cg.len(), 1);
     cg.solve_constraints();
 
     assert!(torch.redstate().is_on());
@@ -952,7 +933,6 @@ fn repeater_locked_simultaneously_by_its_neighbors() {
     ruststone::lock(&throughput, &locker);
 
     let cg = ConstraintGraph::collect(output.clone());
-    assert_eq!(cg.len(), 1);
     cg.solve_constraints();
 
     assert!(torch.redstate().is_on());

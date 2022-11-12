@@ -156,10 +156,6 @@ impl ConstraintGraph {
         cg
     }
 
-    pub fn len(&self) -> usize {
-        self.constraints.len()
-    }
-
     pub fn solve_constraints(&self) {
         let mut queue = VecDeque::from(self.constraints.clone());
         let mut frame = Frame(0);
