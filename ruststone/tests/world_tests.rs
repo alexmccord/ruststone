@@ -1,6 +1,7 @@
 use ruststone::{
     blocks::Block,
-    world::{Vec3, World},
+    world::World,
+    vec3::Vec3,
 };
 
 #[test]

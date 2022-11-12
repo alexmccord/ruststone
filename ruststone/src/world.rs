@@ -2,26 +2,7 @@ use std::ops::{Index, IndexMut};
 
 use fnv::FnvHashMap;
 
-use crate::blocks::Block;
-
-/// We don't need any floating coordinate system
-/// so we represent coordinates here as integers
-#[derive(Clone, Copy, PartialEq, Eq, Default, Hash)]
-pub struct Vec3(pub usize, pub usize, pub usize);
-
-impl Vec3 {
-    pub fn x(self) -> usize {
-        self.0
-    }
-
-    pub fn y(self) -> usize {
-        self.1
-    }
-
-    pub fn z(self) -> usize {
-        self.2
-    }
-}
+use crate::{blocks::Block, vec3::Vec3};
 
 #[derive(Default)]
 pub struct World {
