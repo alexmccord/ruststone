@@ -7,9 +7,13 @@ pub struct Redstate {
 }
 
 impl Redstate {
-    pub(crate) fn new() -> Redstate {
+    pub(crate) fn zero() -> Redstate {
+        Redstate::new(0)
+    }
+
+    pub(crate) fn new(power: u8) -> Redstate {
         Redstate {
-            power: Cell::new(0),
+            power: Cell::new(power),
             forced: Cell::new(false),
         }
     }

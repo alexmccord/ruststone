@@ -130,10 +130,6 @@ impl ConstraintDispatch for RedstoneRepeater {
 
         if let Some(outgoing) = &self.outgoing {
             extra.push(Constraint::new(outgoing.clone(), ctxt.current_frame));
-            extra.push(Constraint::new(
-                outgoing.clone(),
-                ctxt.current_frame + self.dispatch_frame_offset(),
-            ));
         }
 
         extra
@@ -177,7 +173,7 @@ impl Redstone {
     pub fn torch(name: &str) -> RedstoneRef {
         Rc::new(Redstone {
             name: String::from(name),
-            redstate: Redstate::new(),
+            redstate: Redstate::zero(),
             node: RefCell::new(RedstoneNode::Torch(RedstoneTorch {
                 incoming: None,
                 outgoing: Vec::new(),
@@ -188,7 +184,7 @@ impl Redstone {
     pub fn dust(name: &str) -> RedstoneRef {
         Rc::new(Redstone {
             name: String::from(name),
-            redstate: Redstate::new(),
+            redstate: Redstate::zero(),
             node: RefCell::new(RedstoneNode::Dust(RedstoneDust {
                 neighbors: Vec::new(),
                 sources: Vec::new(),
@@ -199,7 +195,7 @@ impl Redstone {
     pub fn block(name: &str) -> RedstoneRef {
         Rc::new(Redstone {
             name: String::from(name),
-            redstate: Redstate::new(),
+            redstate: Redstate::zero(),
             node: RefCell::new(RedstoneNode::Block(Block {
                 incoming: Vec::new(),
                 outgoing: Vec::new(),
@@ -211,7 +207,7 @@ impl Redstone {
         assert!((1..=4).contains(&delay));
         Rc::new(Redstone {
             name: String::from(name),
-            redstate: Redstate::new(),
+            redstate: Redstate::zero(),
             node: RefCell::new(RedstoneNode::Repeater(RedstoneRepeater {
                 delay: Frame(delay.into()),
                 incoming: None,
