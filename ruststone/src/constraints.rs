@@ -8,7 +8,7 @@ use std::{
 use crate::{RedstoneNode, RedstoneRef};
 
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-pub struct Frame(pub u64);
+pub(crate) struct Frame(pub(crate) u64);
 
 impl Add for Frame {
     type Output = Frame;
