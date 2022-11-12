@@ -2,10 +2,8 @@ mod constraints;
 mod redstate;
 mod redstone;
 
-pub mod prelude {
-    pub use crate::constraints::*;
-    pub(crate) use crate::redstate::*;
-    pub use crate::redstone::*;
-}
+pub mod blocks;
+pub mod world;
 
-pub use prelude::*;
+pub use constraints::ConstraintGraph;
+pub use redstone::*;

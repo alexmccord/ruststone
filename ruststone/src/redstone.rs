@@ -5,7 +5,10 @@ use std::{
     rc::Rc,
 };
 
-use crate::{Constraint, ConstraintCtxt, ConstraintDispatch, Frame, Redstate};
+use crate::{
+    constraints::{Constraint, ConstraintCtxt, ConstraintDispatch, Frame},
+    redstate::Redstate,
+};
 
 pub type RedstoneRef = Rc<Redstone>;
 
