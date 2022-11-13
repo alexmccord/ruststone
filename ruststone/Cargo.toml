@@ -5,3 +5,4 @@ edition = "2021"
 
 [dependencies]
 fnv = "1.0.7"
+typed-arena = "2.0.1"

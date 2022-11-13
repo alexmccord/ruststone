@@ -4,10 +4,70 @@ use std::{
     rc::Rc,
 };
 
+use typed_arena::Arena;
+
 use crate::{
     constraints::{Constraint, ConstraintCtxt, ConstraintDispatch, Frame},
     redstate::Redstate,
 };
+
+#[derive(Default)]
+pub struct RedstoneArena<'rctx> {
+    arena: Arena<Redstone<'rctx>>,
+}
+
+impl<'rctx> RedstoneArena<'rctx> {
+    pub fn new() -> RedstoneArena<'rctx> {
+        RedstoneArena { arena: Arena::new() }
+    }
+
+    pub fn torch(&'rctx self, name: &str) -> &Redstone {
+        self.arena.alloc(Redstone {
+            name: String::from(name),
+            redstate: Redstate::zero(),
+            node: RedstoneNode::Torch(RedstoneTorch {
+                incoming: Cell::new(None),
+                outgoing: RefCell::new(Vec::new()),
+            }),
+        })
+    }
+
+    pub fn dust(&'rctx self, name: &str) -> &Redstone {
+        self.arena.alloc(Redstone {
+            name: String::from(name),
+            redstate: Redstate::zero(),
+            node: RedstoneNode::Dust(RedstoneDust {
+                neighbors: RefCell::new(Vec::new()),
+                sources: RefCell::new(Vec::new()),
+            }),
+        })
+    }
+
+    pub fn block(&'rctx self, name: &str) -> &Redstone {
+        self.arena.alloc(Redstone {
+            name: String::from(name),
+            redstate: Redstate::zero(),
+            node: RedstoneNode::Block(Block {
+                incoming: RefCell::new(Vec::new()),
+                outgoing: RefCell::new(Vec::new()),
+            }),
+        })
+    }
+
+    pub fn repeater(&'rctx self, name: &str, delay: u8) -> &Redstone {
+        assert!((1..=4).contains(&delay));
+        self.arena.alloc(Redstone {
+            name: String::from(name),
+            redstate: Redstate::zero(),
+            node: RedstoneNode::Repeater(RedstoneRepeater {
+                delay: Frame(delay.into()),
+                incoming: Cell::new(None),
+                outgoing: Cell::new(None),
+                neighbors: RefCell::new(Vec::new()),
+            }),
+        })
+    }
+}
 
 pub struct RedstoneTorch<'rctx> {
     pub(crate) incoming: Cell<Option<&'rctx Redstone<'rctx>>>,
@@ -169,57 +229,6 @@ impl<'rctx> Redstone<'rctx> {
 
     pub fn node(&self) -> &RedstoneNode<'rctx> {
         &self.node
-    }
-
-    // pub fn node_mut(&self) -> &'rctx mut RedstoneNode {
-    //     &mut self.node
-    // }
-
-    pub fn torch(name: &str) -> Redstone {
-        Redstone {
-            name: String::from(name),
-            redstate: Redstate::zero(),
-            node: RedstoneNode::Torch(RedstoneTorch {
-                incoming: Cell::new(None),
-                outgoing: RefCell::new(Vec::new()),
-            }),
-        }
-    }
-
-    pub fn dust(name: &str) -> Redstone {
-        Redstone {
-            name: String::from(name),
-            redstate: Redstate::zero(),
-            node: RedstoneNode::Dust(RedstoneDust {
-                neighbors: RefCell::new(Vec::new()),
-                sources: RefCell::new(Vec::new()),
-            }),
-        }
-    }
-
-    pub fn block(name: &str) -> Redstone {
-        Redstone {
-            name: String::from(name),
-            redstate: Redstate::zero(),
-            node: RedstoneNode::Block(Block {
-                incoming: RefCell::new(Vec::new()),
-                outgoing: RefCell::new(Vec::new()),
-            }),
-        }
-    }
-
-    pub fn repeater(name: &str, delay: u8) -> Redstone {
-        assert!((1..=4).contains(&delay));
-        Redstone {
-            name: String::from(name),
-            redstate: Redstate::zero(),
-            node: RedstoneNode::Repeater(RedstoneRepeater {
-                delay: Frame(delay.into()),
-                incoming: Cell::new(None),
-                outgoing: Cell::new(None),
-                neighbors: RefCell::new(Vec::new()),
-            }),
-        }
     }
 
     fn is_directed(&self) -> bool {
