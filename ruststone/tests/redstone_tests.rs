@@ -4,8 +4,8 @@ use ruststone::{ConstraintGraph, RedstoneArena};
 fn torch_and_dust() {
     let arena = RedstoneArena::new();
 
-    let torch = arena.torch("torch");
-    let dust = arena.dust("dust");
+    let torch = arena.make_torch("torch");
+    let dust = arena.make_dust("dust");
 
     ruststone::link(torch, dust);
 
@@ -22,10 +22,10 @@ fn torch_and_dust() {
 fn torch_and_dust_and_dust_and_dust() {
     let arena = RedstoneArena::new();
 
-    let torch = arena.torch("torch");
-    let dust1 = arena.dust("dust1");
-    let dust2 = arena.dust("dust2");
-    let dust3 = arena.dust("dust3");
+    let torch = arena.make_torch("torch");
+    let dust1 = arena.make_dust("dust1");
+    let dust2 = arena.make_dust("dust2");
+    let dust3 = arena.make_dust("dust3");
 
     ruststone::link(torch, dust1);
     ruststone::link(dust1, dust2);
@@ -48,24 +48,24 @@ fn torch_and_dust_and_dust_and_dust() {
 fn torch_and_dust_until_it_runs_out_of_redpower() {
     let arena = RedstoneArena::new();
 
-    let torch = arena.torch("torch");
-    let dust1 = arena.dust("dust1");
-    let dust2 = arena.dust("dust2");
-    let dust3 = arena.dust("dust3");
-    let dust4 = arena.dust("dust4");
-    let dust5 = arena.dust("dust5");
-    let dust6 = arena.dust("dust6");
-    let dust7 = arena.dust("dust7");
-    let dust8 = arena.dust("dust8");
-    let dust9 = arena.dust("dust9");
-    let dust10 = arena.dust("dust10");
-    let dust11 = arena.dust("dust11");
-    let dust12 = arena.dust("dust12");
-    let dust13 = arena.dust("dust13");
-    let dust14 = arena.dust("dust14");
-    let dust15 = arena.dust("dust15");
-    let dust16 = arena.dust("dust16");
-    let dust17 = arena.dust("dust17");
+    let torch = arena.make_torch("torch");
+    let dust1 = arena.make_dust("dust1");
+    let dust2 = arena.make_dust("dust2");
+    let dust3 = arena.make_dust("dust3");
+    let dust4 = arena.make_dust("dust4");
+    let dust5 = arena.make_dust("dust5");
+    let dust6 = arena.make_dust("dust6");
+    let dust7 = arena.make_dust("dust7");
+    let dust8 = arena.make_dust("dust8");
+    let dust9 = arena.make_dust("dust9");
+    let dust10 = arena.make_dust("dust10");
+    let dust11 = arena.make_dust("dust11");
+    let dust12 = arena.make_dust("dust12");
+    let dust13 = arena.make_dust("dust13");
+    let dust14 = arena.make_dust("dust14");
+    let dust15 = arena.make_dust("dust15");
+    let dust16 = arena.make_dust("dust16");
+    let dust17 = arena.make_dust("dust17");
 
     ruststone::link(torch, dust1);
     ruststone::link(dust1, dust2);
@@ -116,13 +116,13 @@ fn torch_and_dust_until_it_runs_out_of_redpower() {
 fn dust_in_the_middle_of_two_torches() {
     let arena = RedstoneArena::new();
 
-    let torch_l = arena.torch("torch_l");
-    let dust1 = arena.dust("dust1");
-    let dust2 = arena.dust("dust2");
-    let dust3 = arena.dust("dust3");
-    let dust4 = arena.dust("dust4");
-    let dust5 = arena.dust("dust5");
-    let torch_r = arena.torch("torch_r");
+    let torch_l = arena.make_torch("torch_l");
+    let dust1 = arena.make_dust("dust1");
+    let dust2 = arena.make_dust("dust2");
+    let dust3 = arena.make_dust("dust3");
+    let dust4 = arena.make_dust("dust4");
+    let dust5 = arena.make_dust("dust5");
+    let torch_r = arena.make_torch("torch_r");
 
     ruststone::link(torch_l, dust1);
     ruststone::link(dust1, dust2);
@@ -159,10 +159,10 @@ fn dust_in_the_middle_of_two_torches() {
 fn torch_is_off_if_its_incoming_edge_is_on() {
     let arena = RedstoneArena::new();
 
-    let torch = arena.torch("torch");
-    let dust = arena.dust("dust");
-    let normal_block = arena.block("normal_block");
-    let output = arena.torch("output");
+    let torch = arena.make_torch("torch");
+    let dust = arena.make_dust("dust");
+    let normal_block = arena.make_block("normal_block");
+    let output = arena.make_torch("output");
 
     ruststone::link(torch, dust);
     ruststone::link(dust, normal_block);
@@ -184,10 +184,10 @@ fn torch_is_off_if_its_incoming_edge_is_on() {
 fn torch_and_dust_and_block_and_dust() {
     let arena = RedstoneArena::new();
 
-    let torch = arena.torch("torch");
-    let dust1 = arena.dust("dust1");
-    let normal_block = arena.block("normal_block");
-    let dust2 = arena.dust("dust2");
+    let torch = arena.make_torch("torch");
+    let dust1 = arena.make_dust("dust1");
+    let normal_block = arena.make_block("normal_block");
+    let dust2 = arena.make_dust("dust2");
 
     ruststone::link(torch, dust1);
     ruststone::link(dust1, normal_block);
@@ -209,19 +209,19 @@ fn torch_and_dust_and_block_and_dust() {
 fn and_gate() {
     let arena = RedstoneArena::new();
 
-    let input_l = arena.torch("input_l");
-    let input_r = arena.torch("input_r");
-    let and_l = arena.torch("and_l");
-    let and_r = arena.torch("and_r");
-    let output = arena.torch("output");
+    let input_l = arena.make_torch("input_l");
+    let input_r = arena.make_torch("input_r");
+    let and_l = arena.make_torch("and_l");
+    let and_r = arena.make_torch("and_r");
+    let output = arena.make_torch("output");
 
-    let dust_l = arena.dust("dust_l");
-    let dust_m = arena.dust("dust_m");
-    let dust_r = arena.dust("dust_r");
+    let dust_l = arena.make_dust("dust_l");
+    let dust_m = arena.make_dust("dust_m");
+    let dust_r = arena.make_dust("dust_r");
 
-    let block_l = arena.block("block_l");
-    let block_m = arena.block("block_m");
-    let block_r = arena.block("block_r");
+    let block_l = arena.make_block("block_l");
+    let block_m = arena.make_block("block_m");
+    let block_r = arena.make_block("block_r");
 
     ruststone::link(input_l, dust_l);
     ruststone::link(dust_l, block_l);
@@ -256,18 +256,18 @@ fn and_gate() {
 fn and_gate_with_one_arm_off() {
     let arena = RedstoneArena::new();
 
-    let input_r = arena.torch("input_r");
-    let and_l = arena.torch("and_l");
-    let and_r = arena.torch("and_r");
-    let output = arena.torch("output");
+    let input_r = arena.make_torch("input_r");
+    let and_l = arena.make_torch("and_l");
+    let and_r = arena.make_torch("and_r");
+    let output = arena.make_torch("output");
 
-    let dust_l = arena.dust("dust_l");
-    let dust_m = arena.dust("dust_m");
-    let dust_r = arena.dust("dust_r");
+    let dust_l = arena.make_dust("dust_l");
+    let dust_m = arena.make_dust("dust_m");
+    let dust_r = arena.make_dust("dust_r");
 
-    let block_l = arena.block("block_l");
-    let block_m = arena.block("block_m");
-    let block_r = arena.block("block_r");
+    let block_l = arena.make_block("block_l");
+    let block_m = arena.make_block("block_m");
+    let block_r = arena.make_block("block_r");
 
     ruststone::link(dust_l, block_l);
     ruststone::link(block_l, and_l);
@@ -299,17 +299,17 @@ fn and_gate_with_one_arm_off() {
 fn and_gate_with_both_arms_off() {
     let arena = RedstoneArena::new();
 
-    let and_l = arena.torch("and_l");
-    let and_r = arena.torch("and_r");
-    let output = arena.torch("output");
+    let and_l = arena.make_torch("and_l");
+    let and_r = arena.make_torch("and_r");
+    let output = arena.make_torch("output");
 
-    let dust_l = arena.dust("dust_l");
-    let dust_m = arena.dust("dust_m");
-    let dust_r = arena.dust("dust_r");
+    let dust_l = arena.make_dust("dust_l");
+    let dust_m = arena.make_dust("dust_m");
+    let dust_r = arena.make_dust("dust_r");
 
-    let block_l = arena.block("block_l");
-    let block_m = arena.block("block_m");
-    let block_r = arena.block("block_r");
+    let block_l = arena.make_block("block_l");
+    let block_m = arena.make_block("block_m");
+    let block_r = arena.make_block("block_r");
 
     ruststone::link(dust_l, block_l);
     ruststone::link(block_l, and_l);
@@ -338,15 +338,15 @@ fn and_gate_with_both_arms_off() {
 fn xor_gate() {
     let arena = RedstoneArena::new();
 
-    let input_l = arena.torch("input_l");
-    let input_dust_l = arena.dust("input_dust_l");
-    let dust_block_l = arena.block("dust_block_l");
-    let torch_on_top_block_l = arena.torch("torch_on_top_block_l");
-    let torch_in_front_block_l = arena.torch("torch_in_front_block_l");
-    let dust_after_inversion_l = arena.dust("dust_after_inversion_l");
-    let dust_after_inversion_l2 = arena.dust("dust_after_inversion_l2");
-    let block_after_inversion_l = arena.block("block_after_inversion_l");
-    let torch_after_dust_inversion_l = arena.torch("torch_after_dust_inversion_l");
+    let input_l = arena.make_torch("input_l");
+    let input_dust_l = arena.make_dust("input_dust_l");
+    let dust_block_l = arena.make_block("dust_block_l");
+    let torch_on_top_block_l = arena.make_torch("torch_on_top_block_l");
+    let torch_in_front_block_l = arena.make_torch("torch_in_front_block_l");
+    let dust_after_inversion_l = arena.make_dust("dust_after_inversion_l");
+    let dust_after_inversion_l2 = arena.make_dust("dust_after_inversion_l2");
+    let block_after_inversion_l = arena.make_block("block_after_inversion_l");
+    let torch_after_dust_inversion_l = arena.make_torch("torch_after_dust_inversion_l");
 
     ruststone::link(input_l, input_dust_l);
     ruststone::link(input_dust_l, dust_block_l);
@@ -361,15 +361,15 @@ fn xor_gate() {
     ruststone::add_weighted_edge(dust_after_inversion_l, torch_in_front_block_l, 1);
     ruststone::add_weighted_edge(dust_after_inversion_l2, torch_in_front_block_l, 2);
 
-    let input_r = arena.torch("input_r");
-    let input_dust_r = arena.dust("input_dust_r");
-    let dust_block_r = arena.block("dust_block_r");
-    let torch_on_top_block_r = arena.torch("torch_on_top_block_r");
-    let torch_in_front_block_r = arena.torch("torch_in_front_block_r");
-    let dust_after_inversion_r = arena.dust("dust_after_inversion_r");
-    let dust_after_inversion_r2 = arena.dust("dust_after_inversion_r2");
-    let block_after_inversion_r = arena.block("block_after_inversion_r");
-    let torch_after_dust_inversion_r = arena.torch("torch_after_dust_inversion_r");
+    let input_r = arena.make_torch("input_r");
+    let input_dust_r = arena.make_dust("input_dust_r");
+    let dust_block_r = arena.make_block("dust_block_r");
+    let torch_on_top_block_r = arena.make_torch("torch_on_top_block_r");
+    let torch_in_front_block_r = arena.make_torch("torch_in_front_block_r");
+    let dust_after_inversion_r = arena.make_dust("dust_after_inversion_r");
+    let dust_after_inversion_r2 = arena.make_dust("dust_after_inversion_r2");
+    let block_after_inversion_r = arena.make_block("block_after_inversion_r");
+    let torch_after_dust_inversion_r = arena.make_torch("torch_after_dust_inversion_r");
 
     ruststone::link(input_r, input_dust_r);
     ruststone::link(input_dust_r, dust_block_r);
@@ -384,10 +384,10 @@ fn xor_gate() {
     ruststone::add_weighted_edge(dust_after_inversion_r, torch_in_front_block_r, 1);
     ruststone::add_weighted_edge(dust_after_inversion_r2, torch_in_front_block_r, 2);
 
-    let and_dust_1 = arena.dust("and_dust_1");
-    let and_dust_2 = arena.dust("and_dust_2");
-    let and_block = arena.block("and_block");
-    let inversion_of_and = arena.torch("inversion_of_and");
+    let and_dust_1 = arena.make_dust("and_dust_1");
+    let and_dust_2 = arena.make_dust("and_dust_2");
+    let and_block = arena.make_block("and_block");
+    let inversion_of_and = arena.make_torch("inversion_of_and");
 
     ruststone::link(torch_on_top_block_l, and_dust_1);
     ruststone::link(torch_on_top_block_r, and_dust_1);
@@ -408,7 +408,7 @@ fn xor_gate() {
     ruststone::add_weighted_edge(dust_after_inversion_r, inversion_of_and, 1);
     ruststone::add_weighted_edge(dust_after_inversion_r2, inversion_of_and, 2);
 
-    let output = arena.dust("output");
+    let output = arena.make_dust("output");
 
     ruststone::link(torch_after_dust_inversion_l, output);
     ruststone::link(torch_after_dust_inversion_r, output);
@@ -435,14 +435,14 @@ fn xor_gate() {
 fn xor_gate_with_left_off() {
     let arena = RedstoneArena::new();
 
-    let input_dust_l = arena.dust("input_dust_l");
-    let dust_block_l = arena.block("dust_block_l");
-    let torch_on_top_block_l = arena.torch("torch_on_top_block_l");
-    let torch_in_front_block_l = arena.torch("torch_in_front_block_l");
-    let dust_after_inversion_l = arena.dust("dust_after_inversion_l");
-    let dust_after_inversion_l2 = arena.dust("dust_after_inversion_l2");
-    let block_after_inversion_l = arena.block("block_after_inversion_l");
-    let torch_after_dust_inversion_l = arena.torch("torch_after_dust_inversion_l");
+    let input_dust_l = arena.make_dust("input_dust_l");
+    let dust_block_l = arena.make_block("dust_block_l");
+    let torch_on_top_block_l = arena.make_torch("torch_on_top_block_l");
+    let torch_in_front_block_l = arena.make_torch("torch_in_front_block_l");
+    let dust_after_inversion_l = arena.make_dust("dust_after_inversion_l");
+    let dust_after_inversion_l2 = arena.make_dust("dust_after_inversion_l2");
+    let block_after_inversion_l = arena.make_block("block_after_inversion_l");
+    let torch_after_dust_inversion_l = arena.make_torch("torch_after_dust_inversion_l");
 
     ruststone::link(input_dust_l, dust_block_l);
     ruststone::link(dust_block_l, torch_on_top_block_l);
@@ -455,15 +455,15 @@ fn xor_gate_with_left_off() {
     ruststone::add_weighted_edge(dust_after_inversion_l, torch_in_front_block_l, 1);
     ruststone::add_weighted_edge(dust_after_inversion_l2, torch_in_front_block_l, 2);
 
-    let input_r = arena.torch("input_r");
-    let input_dust_r = arena.dust("input_dust_r");
-    let dust_block_r = arena.block("dust_block_r");
-    let torch_on_top_block_r = arena.torch("torch_on_top_block_r");
-    let torch_in_front_block_r = arena.torch("torch_in_front_block_r");
-    let dust_after_inversion_r = arena.dust("dust_after_inversion_r");
-    let dust_after_inversion_r2 = arena.dust("dust_after_inversion_r2");
-    let block_after_inversion_r = arena.block("block_after_inversion_r");
-    let torch_after_dust_inversion_r = arena.torch("torch_after_dust_inversion_r");
+    let input_r = arena.make_torch("input_r");
+    let input_dust_r = arena.make_dust("input_dust_r");
+    let dust_block_r = arena.make_block("dust_block_r");
+    let torch_on_top_block_r = arena.make_torch("torch_on_top_block_r");
+    let torch_in_front_block_r = arena.make_torch("torch_in_front_block_r");
+    let dust_after_inversion_r = arena.make_dust("dust_after_inversion_r");
+    let dust_after_inversion_r2 = arena.make_dust("dust_after_inversion_r2");
+    let block_after_inversion_r = arena.make_block("block_after_inversion_r");
+    let torch_after_dust_inversion_r = arena.make_torch("torch_after_dust_inversion_r");
 
     ruststone::link(input_r, input_dust_r);
     ruststone::link(input_dust_r, dust_block_r);
@@ -478,10 +478,10 @@ fn xor_gate_with_left_off() {
     ruststone::add_weighted_edge(dust_after_inversion_r, torch_in_front_block_r, 1);
     ruststone::add_weighted_edge(dust_after_inversion_r2, torch_in_front_block_r, 2);
 
-    let and_dust_1 = arena.dust("and_dust_1");
-    let and_dust_2 = arena.dust("and_dust_2");
-    let and_block = arena.block("and_block");
-    let inversion_of_and = arena.torch("inversion_of_and");
+    let and_dust_1 = arena.make_dust("and_dust_1");
+    let and_dust_2 = arena.make_dust("and_dust_2");
+    let and_block = arena.make_block("and_block");
+    let inversion_of_and = arena.make_torch("inversion_of_and");
 
     ruststone::link(torch_on_top_block_l, and_dust_1);
     ruststone::link(torch_on_top_block_r, and_dust_1);
@@ -502,7 +502,7 @@ fn xor_gate_with_left_off() {
     ruststone::add_weighted_edge(dust_after_inversion_r, inversion_of_and, 1);
     ruststone::add_weighted_edge(dust_after_inversion_r2, inversion_of_and, 2);
 
-    let output = arena.dust("output");
+    let output = arena.make_dust("output");
 
     ruststone::link(torch_after_dust_inversion_l, output);
     ruststone::link(torch_after_dust_inversion_r, output);
@@ -528,15 +528,15 @@ fn xor_gate_with_left_off() {
 fn xor_gate_with_right_off() {
     let arena = RedstoneArena::new();
 
-    let input_l = arena.torch("input_l");
-    let input_dust_l = arena.dust("input_dust_l");
-    let dust_block_l = arena.block("dust_block_l");
-    let torch_on_top_block_l = arena.torch("torch_on_top_block_l");
-    let torch_in_front_block_l = arena.torch("torch_in_front_block_l");
-    let dust_after_inversion_l = arena.dust("dust_after_inversion_l");
-    let dust_after_inversion_l2 = arena.dust("dust_after_inversion_l2");
-    let block_after_inversion_l = arena.block("block_after_inversion_l");
-    let torch_after_dust_inversion_l = arena.torch("torch_after_dust_inversion_l");
+    let input_l = arena.make_torch("input_l");
+    let input_dust_l = arena.make_dust("input_dust_l");
+    let dust_block_l = arena.make_block("dust_block_l");
+    let torch_on_top_block_l = arena.make_torch("torch_on_top_block_l");
+    let torch_in_front_block_l = arena.make_torch("torch_in_front_block_l");
+    let dust_after_inversion_l = arena.make_dust("dust_after_inversion_l");
+    let dust_after_inversion_l2 = arena.make_dust("dust_after_inversion_l2");
+    let block_after_inversion_l = arena.make_block("block_after_inversion_l");
+    let torch_after_dust_inversion_l = arena.make_torch("torch_after_dust_inversion_l");
 
     ruststone::link(input_l, input_dust_l);
     ruststone::link(input_dust_l, dust_block_l);
@@ -551,14 +551,14 @@ fn xor_gate_with_right_off() {
     ruststone::add_weighted_edge(dust_after_inversion_l, torch_in_front_block_l, 1);
     ruststone::add_weighted_edge(dust_after_inversion_l2, torch_in_front_block_l, 2);
 
-    let input_dust_r = arena.dust("input_dust_r");
-    let dust_block_r = arena.block("dust_block_r");
-    let torch_on_top_block_r = arena.torch("torch_on_top_block_r");
-    let torch_in_front_block_r = arena.torch("torch_in_front_block_r");
-    let dust_after_inversion_r = arena.dust("dust_after_inversion_r");
-    let dust_after_inversion_r2 = arena.dust("dust_after_inversion_r2");
-    let block_after_inversion_r = arena.block("block_after_inversion_r");
-    let torch_after_dust_inversion_r = arena.torch("torch_after_dust_inversion_r");
+    let input_dust_r = arena.make_dust("input_dust_r");
+    let dust_block_r = arena.make_block("dust_block_r");
+    let torch_on_top_block_r = arena.make_torch("torch_on_top_block_r");
+    let torch_in_front_block_r = arena.make_torch("torch_in_front_block_r");
+    let dust_after_inversion_r = arena.make_dust("dust_after_inversion_r");
+    let dust_after_inversion_r2 = arena.make_dust("dust_after_inversion_r2");
+    let block_after_inversion_r = arena.make_block("block_after_inversion_r");
+    let torch_after_dust_inversion_r = arena.make_torch("torch_after_dust_inversion_r");
 
     ruststone::link(input_dust_r, dust_block_r);
     ruststone::link(dust_block_r, torch_on_top_block_r);
@@ -571,10 +571,10 @@ fn xor_gate_with_right_off() {
     ruststone::add_weighted_edge(dust_after_inversion_r, torch_in_front_block_r, 1);
     ruststone::add_weighted_edge(dust_after_inversion_r2, torch_in_front_block_r, 2);
 
-    let and_dust_1 = arena.dust("and_dust_1");
-    let and_dust_2 = arena.dust("and_dust_2");
-    let and_block = arena.block("and_block");
-    let inversion_of_and = arena.torch("inversion_of_and");
+    let and_dust_1 = arena.make_dust("and_dust_1");
+    let and_dust_2 = arena.make_dust("and_dust_2");
+    let and_block = arena.make_block("and_block");
+    let inversion_of_and = arena.make_torch("inversion_of_and");
 
     ruststone::link(torch_on_top_block_l, and_dust_1);
     ruststone::link(torch_on_top_block_r, and_dust_1);
@@ -595,7 +595,7 @@ fn xor_gate_with_right_off() {
     ruststone::add_weighted_edge(dust_after_inversion_r, inversion_of_and, 1);
     ruststone::add_weighted_edge(dust_after_inversion_r2, inversion_of_and, 2);
 
-    let output = arena.dust("output");
+    let output = arena.make_dust("output");
 
     ruststone::link(torch_after_dust_inversion_l, output);
     ruststone::link(torch_after_dust_inversion_r, output);
@@ -621,14 +621,14 @@ fn xor_gate_with_right_off() {
 fn xor_gate_with_both_off() {
     let arena = RedstoneArena::new();
 
-    let input_dust_l = arena.dust("input_dust_l");
-    let dust_block_l = arena.block("dust_block_l");
-    let torch_on_top_block_l = arena.torch("torch_on_top_block_l");
-    let torch_in_front_block_l = arena.torch("torch_in_front_block_l");
-    let dust_after_inversion_l = arena.dust("dust_after_inversion_l");
-    let dust_after_inversion_l2 = arena.dust("dust_after_inversion_l2");
-    let block_after_inversion_l = arena.block("block_after_inversion_l");
-    let torch_after_dust_inversion_l = arena.torch("torch_after_dust_inversion_l");
+    let input_dust_l = arena.make_dust("input_dust_l");
+    let dust_block_l = arena.make_block("dust_block_l");
+    let torch_on_top_block_l = arena.make_torch("torch_on_top_block_l");
+    let torch_in_front_block_l = arena.make_torch("torch_in_front_block_l");
+    let dust_after_inversion_l = arena.make_dust("dust_after_inversion_l");
+    let dust_after_inversion_l2 = arena.make_dust("dust_after_inversion_l2");
+    let block_after_inversion_l = arena.make_block("block_after_inversion_l");
+    let torch_after_dust_inversion_l = arena.make_torch("torch_after_dust_inversion_l");
 
     ruststone::link(input_dust_l, dust_block_l);
     ruststone::link(dust_block_l, torch_on_top_block_l);
@@ -641,14 +641,14 @@ fn xor_gate_with_both_off() {
     ruststone::add_weighted_edge(dust_after_inversion_l, torch_in_front_block_l, 1);
     ruststone::add_weighted_edge(dust_after_inversion_l2, torch_in_front_block_l, 2);
 
-    let input_dust_r = arena.dust("input_dust_r");
-    let dust_block_r = arena.block("dust_block_r");
-    let torch_on_top_block_r = arena.torch("torch_on_top_block_r");
-    let torch_in_front_block_r = arena.torch("torch_in_front_block_r");
-    let dust_after_inversion_r = arena.dust("dust_after_inversion_r");
-    let dust_after_inversion_r2 = arena.dust("dust_after_inversion_r2");
-    let block_after_inversion_r = arena.block("block_after_inversion_r");
-    let torch_after_dust_inversion_r = arena.torch("torch_after_dust_inversion_r");
+    let input_dust_r = arena.make_dust("input_dust_r");
+    let dust_block_r = arena.make_block("dust_block_r");
+    let torch_on_top_block_r = arena.make_torch("torch_on_top_block_r");
+    let torch_in_front_block_r = arena.make_torch("torch_in_front_block_r");
+    let dust_after_inversion_r = arena.make_dust("dust_after_inversion_r");
+    let dust_after_inversion_r2 = arena.make_dust("dust_after_inversion_r2");
+    let block_after_inversion_r = arena.make_block("block_after_inversion_r");
+    let torch_after_dust_inversion_r = arena.make_torch("torch_after_dust_inversion_r");
 
     ruststone::link(input_dust_r, dust_block_r);
     ruststone::link(dust_block_r, torch_on_top_block_r);
@@ -661,10 +661,10 @@ fn xor_gate_with_both_off() {
     ruststone::add_weighted_edge(dust_after_inversion_r, torch_in_front_block_r, 1);
     ruststone::add_weighted_edge(dust_after_inversion_r2, torch_in_front_block_r, 2);
 
-    let and_dust_1 = arena.dust("and_dust_1");
-    let and_dust_2 = arena.dust("and_dust_2");
-    let and_block = arena.block("and_block");
-    let inversion_of_and = arena.torch("inversion_of_and");
+    let and_dust_1 = arena.make_dust("and_dust_1");
+    let and_dust_2 = arena.make_dust("and_dust_2");
+    let and_block = arena.make_block("and_block");
+    let inversion_of_and = arena.make_torch("inversion_of_and");
 
     ruststone::link(torch_on_top_block_l, and_dust_1);
     ruststone::link(torch_on_top_block_r, and_dust_1);
@@ -685,7 +685,7 @@ fn xor_gate_with_both_off() {
     ruststone::add_weighted_edge(dust_after_inversion_r, inversion_of_and, 1);
     ruststone::add_weighted_edge(dust_after_inversion_r2, inversion_of_and, 2);
 
-    let output = arena.dust("output");
+    let output = arena.make_dust("output");
 
     ruststone::link(torch_after_dust_inversion_l, output);
     ruststone::link(torch_after_dust_inversion_r, output);
@@ -710,15 +710,15 @@ fn xor_gate_with_both_off() {
 fn memory_cell() {
     let arena = RedstoneArena::new();
 
-    let block_a = arena.block("block_a");
-    let torch_a = arena.torch("torch_a");
-    let dust_a1 = arena.dust("dust_a1");
-    let dust_a2 = arena.dust("dust_a2");
+    let block_a = arena.make_block("block_a");
+    let torch_a = arena.make_torch("torch_a");
+    let dust_a1 = arena.make_dust("dust_a1");
+    let dust_a2 = arena.make_dust("dust_a2");
 
-    let block_b = arena.block("block_b");
-    let torch_b = arena.torch("torch_b");
-    let dust_b1 = arena.dust("dust_b1");
-    let dust_b2 = arena.dust("dust_b2");
+    let block_b = arena.make_block("block_b");
+    let torch_b = arena.make_torch("torch_b");
+    let dust_b1 = arena.make_dust("dust_b1");
+    let dust_b2 = arena.make_dust("dust_b2");
 
     ruststone::link(block_a, torch_a);
     ruststone::link(torch_a, dust_a1);
@@ -747,15 +747,15 @@ fn memory_cell() {
 fn memory_cell_alt() {
     let arena = RedstoneArena::new();
 
-    let block_a = arena.block("block_a");
-    let torch_a = arena.torch("torch_a");
-    let dust_a1 = arena.dust("dust_a1");
-    let dust_a2 = arena.dust("dust_a2");
+    let block_a = arena.make_block("block_a");
+    let torch_a = arena.make_torch("torch_a");
+    let dust_a1 = arena.make_dust("dust_a1");
+    let dust_a2 = arena.make_dust("dust_a2");
 
-    let block_b = arena.block("block_b");
-    let torch_b = arena.torch("torch_b");
-    let dust_b1 = arena.dust("dust_b1");
-    let dust_b2 = arena.dust("dust_b2");
+    let block_b = arena.make_block("block_b");
+    let torch_b = arena.make_torch("torch_b");
+    let dust_b1 = arena.make_dust("dust_b1");
+    let dust_b2 = arena.make_dust("dust_b2");
 
     ruststone::link(block_a, torch_a);
     ruststone::link(torch_a, dust_a1);
@@ -784,10 +784,10 @@ fn memory_cell_alt() {
 fn torch_and_dust_and_block_and_repeater() {
     let arena = RedstoneArena::new();
 
-    let torch = arena.torch("torch");
-    let dust = arena.dust("dust");
-    let block = arena.block("block");
-    let repeater = arena.repeater("repeater", 1);
+    let torch = arena.make_torch("torch");
+    let dust = arena.make_dust("dust");
+    let block = arena.make_block("block");
+    let repeater = arena.make_repeater("repeater", 1);
 
     ruststone::link(torch, dust);
     ruststone::link(dust, block);
@@ -809,12 +809,12 @@ fn torch_and_dust_and_block_and_repeater() {
 fn torch_and_dust_and_block_and_repeater_and_block_and_dust() {
     let arena = RedstoneArena::new();
 
-    let torch = arena.torch("torch");
-    let dust1 = arena.dust("dust1");
-    let block1 = arena.block("block1");
-    let repeater = arena.repeater("repeater", 1);
-    let block2 = arena.block("block2");
-    let dust2 = arena.dust("dust2");
+    let torch = arena.make_torch("torch");
+    let dust1 = arena.make_dust("dust1");
+    let block1 = arena.make_block("block1");
+    let repeater = arena.make_repeater("repeater", 1);
+    let block2 = arena.make_block("block2");
+    let dust2 = arena.make_dust("dust2");
 
     ruststone::link(torch, dust1);
     ruststone::link(dust1, block1);
@@ -842,14 +842,14 @@ fn torch_and_dust_and_block_and_repeater_and_block_and_dust() {
 fn repeater_locked_by_its_neighbor() {
     let arena = RedstoneArena::new();
 
-    let torch = arena.torch("torch");
-    let dust1 = arena.dust("dust1");
-    let dust2 = arena.dust("dust2");
-    let dust3 = arena.dust("dust3");
-    let dust4 = arena.dust("dust4");
-    let throughput = arena.repeater("throughput", 2);
-    let locker = arena.repeater("locker", 1);
-    let output = arena.dust("output");
+    let torch = arena.make_torch("torch");
+    let dust1 = arena.make_dust("dust1");
+    let dust2 = arena.make_dust("dust2");
+    let dust3 = arena.make_dust("dust3");
+    let dust4 = arena.make_dust("dust4");
+    let throughput = arena.make_repeater("throughput", 2);
+    let locker = arena.make_repeater("locker", 1);
+    let output = arena.make_dust("output");
 
     // |
     // ^<+
@@ -891,14 +891,14 @@ fn repeater_locked_by_its_neighbor() {
 fn repeater_locked_by_its_slower_neighbor() {
     let arena = RedstoneArena::new();
 
-    let torch = arena.torch("torch");
-    let dust1 = arena.dust("dust1");
-    let dust2 = arena.dust("dust2");
-    let dust3 = arena.dust("dust3");
-    let dust4 = arena.dust("dust4");
-    let throughput = arena.repeater("throughput", 1);
-    let locker = arena.repeater("locker", 2);
-    let output = arena.dust("output");
+    let torch = arena.make_torch("torch");
+    let dust1 = arena.make_dust("dust1");
+    let dust2 = arena.make_dust("dust2");
+    let dust3 = arena.make_dust("dust3");
+    let dust4 = arena.make_dust("dust4");
+    let throughput = arena.make_repeater("throughput", 1);
+    let locker = arena.make_repeater("locker", 2);
+    let output = arena.make_dust("output");
 
     // |
     // ^<+
@@ -940,14 +940,14 @@ fn repeater_locked_by_its_slower_neighbor() {
 fn repeater_locked_simultaneously_by_its_neighbors() {
     let arena = RedstoneArena::new();
 
-    let torch = arena.torch("torch");
-    let dust1 = arena.dust("dust1");
-    let dust2 = arena.dust("dust2");
-    let dust3 = arena.dust("dust3");
-    let dust4 = arena.dust("dust4");
-    let throughput = arena.repeater("throughput", 1);
-    let locker = arena.repeater("locker", 1);
-    let output = arena.dust("output");
+    let torch = arena.make_torch("torch");
+    let dust1 = arena.make_dust("dust1");
+    let dust2 = arena.make_dust("dust2");
+    let dust3 = arena.make_dust("dust3");
+    let dust4 = arena.make_dust("dust4");
+    let throughput = arena.make_repeater("throughput", 1);
+    let locker = arena.make_repeater("locker", 1);
+    let output = arena.make_dust("output");
 
     // |
     // ^<+

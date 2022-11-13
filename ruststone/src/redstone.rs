@@ -23,7 +23,7 @@ impl<'rctx> RedstoneArena<'rctx> {
         }
     }
 
-    pub fn torch(&'rctx self, name: &str) -> &Redstone {
+    pub fn make_torch(&'rctx self, name: &str) -> &Redstone {
         self.arena.alloc(Redstone {
             name: String::from(name),
             redstate: Redstate::zero(),
@@ -34,7 +34,7 @@ impl<'rctx> RedstoneArena<'rctx> {
         })
     }
 
-    pub fn dust(&'rctx self, name: &str) -> &Redstone {
+    pub fn make_dust(&'rctx self, name: &str) -> &Redstone {
         self.arena.alloc(Redstone {
             name: String::from(name),
             redstate: Redstate::zero(),
@@ -45,7 +45,7 @@ impl<'rctx> RedstoneArena<'rctx> {
         })
     }
 
-    pub fn block(&'rctx self, name: &str) -> &Redstone {
+    pub fn make_block(&'rctx self, name: &str) -> &Redstone {
         self.arena.alloc(Redstone {
             name: String::from(name),
             redstate: Redstate::zero(),
@@ -56,7 +56,7 @@ impl<'rctx> RedstoneArena<'rctx> {
         })
     }
 
-    pub fn repeater(&'rctx self, name: &str, delay: u8) -> &Redstone {
+    pub fn make_repeater(&'rctx self, name: &str, delay: u8) -> &Redstone {
         assert!((1..=4).contains(&delay));
         self.arena.alloc(Redstone {
             name: String::from(name),
