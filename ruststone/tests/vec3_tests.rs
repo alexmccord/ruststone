@@ -22,3 +22,10 @@ fn into() {
 
     assert_eq!(a, Vec3(0, 0, 0));
 }
+
+#[test]
+fn display() {
+    let a = Vec3(5, 7, 1);
+
+    assert_eq!(a.to_string(), "(5, 7, 1)");
+}

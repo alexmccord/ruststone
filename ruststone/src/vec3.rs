@@ -1,4 +1,4 @@
-use std::ops::{Add, Sub};
+use std::{ops::{Add, Sub}, fmt::Display};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Hash)]
 pub struct Vec3(pub i32, pub i32, pub i32);
@@ -20,6 +20,12 @@ impl Vec3 {
 impl From<(i32, i32, i32)> for Vec3 {
     fn from((x, y, z): (i32, i32, i32)) -> Vec3 {
         Vec3(x, y, z)
+    }
+}
+
+impl Display for Vec3 {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "({}, {}, {})", self.x(), self.y(), self.z())
     }
 }
 
