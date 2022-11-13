@@ -1,8 +1,6 @@
 use std::{
-    cell::RefCell,
     fmt::Display,
-    ops::{Deref, DerefMut},
-    rc::Rc,
+    rc::Rc, cell::{Cell, RefCell}
 };
 
 use crate::{
@@ -10,18 +8,16 @@ use crate::{
     redstate::Redstate,
 };
 
-pub type RedstoneRef = Rc<Redstone>;
-
-pub struct RedstoneTorch {
-    pub(crate) incoming: Option<RedstoneRef>,
-    pub(crate) outgoing: Vec<RedstoneRef>,
+pub struct RedstoneTorch<'rctx> {
+    pub(crate) incoming: Cell<Option<&'rctx Redstone<'rctx>>>,
+    pub(crate) outgoing: RefCell<Vec<&'rctx Redstone<'rctx>>>,
 }
 
-impl ConstraintDispatch for RedstoneTorch {
-    fn dispatch(&self, ctxt: ConstraintCtxt) -> Vec<Rc<Constraint>> {
+impl<'rctx> ConstraintDispatch<'rctx> for RedstoneTorch<'rctx> {
+    fn dispatch(&self, ctxt: ConstraintCtxt<'rctx>) -> Vec<Rc<Constraint<'rctx>>> {
         let mut extra = Vec::new();
 
-        match &self.incoming {
+        match &self.incoming.get() {
             Some(incoming) => ctxt
                 .redstone
                 .redstate()
@@ -29,8 +25,8 @@ impl ConstraintDispatch for RedstoneTorch {
             None => ctxt.redstone.redstate().set_power(16),
         }
 
-        for out in self.outgoing.iter() {
-            extra.push(Constraint::new(out.clone(), ctxt.current_frame));
+        for out in self.outgoing.borrow().iter() {
+            extra.push(Constraint::new(out, ctxt.current_frame));
         }
 
         extra
@@ -41,16 +37,17 @@ impl ConstraintDispatch for RedstoneTorch {
     }
 }
 
-pub struct RedstoneDust {
-    pub(crate) neighbors: Vec<RedstoneRef>,
-    pub(crate) sources: Vec<(u8, RedstoneRef)>,
+pub struct RedstoneDust<'rctx> {
+    pub(crate) neighbors: RefCell<Vec<&'rctx Redstone<'rctx>>>,
+    pub(crate) sources: RefCell<Vec<(u8, &'rctx Redstone<'rctx>)>>,
 }
 
-impl ConstraintDispatch for RedstoneDust {
-    fn dispatch(&self, ctxt: ConstraintCtxt) -> Vec<Rc<Constraint>> {
+impl<'rctx> ConstraintDispatch<'rctx> for RedstoneDust<'rctx> {
+    fn dispatch(&self, ctxt: ConstraintCtxt<'rctx>) -> Vec<Rc<Constraint<'rctx>>> {
         let mut extra = Vec::new();
 
-        let Some((weight, redstate)) = self.sources
+        let sources = self.sources.borrow();
+        let Some((weight, redstate)) = sources
             .iter()
             .map(|(w, r)| (w, r.redstate()))
             .max_by_key(|(&w, r)| r.get_power().saturating_sub(w))
@@ -62,8 +59,8 @@ impl ConstraintDispatch for RedstoneDust {
             .redstate()
             .set_power(redstate.get_power().saturating_sub(*weight));
 
-        for neighbor in self.neighbors.iter() {
-            extra.push(Constraint::new(neighbor.clone(), ctxt.current_frame));
+        for neighbor in self.neighbors.borrow().iter() {
+            extra.push(Constraint::new(neighbor, ctxt.current_frame));
         }
 
         extra
@@ -75,25 +72,25 @@ impl ConstraintDispatch for RedstoneDust {
 }
 
 // Not the Redstone Block! It's just a block like Sandstone.
-pub struct Block {
-    pub(crate) incoming: Vec<RedstoneRef>,
-    pub(crate) outgoing: Vec<RedstoneRef>,
+pub struct Block<'rctx> {
+    pub(crate) incoming: RefCell<Vec<&'rctx Redstone<'rctx>>>,
+    pub(crate) outgoing: RefCell<Vec<&'rctx Redstone<'rctx>>>,
 }
 
-impl ConstraintDispatch for Block {
-    fn dispatch(&self, ctxt: ConstraintCtxt) -> Vec<Rc<Constraint>> {
+impl<'rctx> ConstraintDispatch<'rctx> for Block<'rctx> {
+    fn dispatch(&self, ctxt: ConstraintCtxt<'rctx>) -> Vec<Rc<Constraint<'rctx>>> {
         let mut extra = Vec::new();
 
-        let has_power = self.incoming.iter().any(|r| r.redstate().is_on());
-        let is_forced = self.incoming.iter().any(|r| r.redstate().is_forced());
+        let has_power = self.incoming.borrow().iter().any(|r| r.redstate().is_on());
+        let is_forced = self.incoming.borrow().iter().any(|r| r.redstate().is_forced());
 
         ctxt.redstone.redstate().set_forced(has_power);
         ctxt.redstone
             .redstate()
             .set_power(if is_forced { 16 } else { 0 });
 
-        for out in self.outgoing.iter() {
-            extra.push(Constraint::new(out.clone(), ctxt.current_frame));
+        for out in self.outgoing.borrow().iter() {
+            extra.push(Constraint::new(out, ctxt.current_frame));
         }
 
         extra
@@ -104,23 +101,23 @@ impl ConstraintDispatch for Block {
     }
 }
 
-pub struct RedstoneRepeater {
+pub struct RedstoneRepeater<'rctx> {
     pub(crate) delay: Frame,
-    pub(crate) incoming: Option<RedstoneRef>,
-    pub(crate) outgoing: Option<RedstoneRef>,
-    pub(crate) neighbors: Vec<RedstoneRef>,
+    pub(crate) incoming: Cell<Option<&'rctx Redstone<'rctx>>>,
+    pub(crate) outgoing: Cell<Option<&'rctx Redstone<'rctx>>>,
+    pub(crate) neighbors: RefCell<Vec<&'rctx Redstone<'rctx>>>,
 }
 
-impl ConstraintDispatch for RedstoneRepeater {
-    fn dispatch(&self, ctxt: ConstraintCtxt) -> Vec<Rc<Constraint>> {
+impl<'rctx> ConstraintDispatch<'rctx> for RedstoneRepeater<'rctx> {
+    fn dispatch(&self, ctxt: ConstraintCtxt<'rctx>) -> Vec<Rc<Constraint<'rctx>>> {
         let mut extra = Vec::new();
 
         // If any neighbors are on, we'll need to lock the redstate of this repeater.
-        if self.neighbors.iter().any(|n| n.redstate.is_on()) {
+        if self.neighbors.borrow().iter().any(|n| n.redstate.is_on()) {
             return extra;
         }
 
-        let Some(incoming) = &self.incoming else {
+        let Some(incoming) = self.incoming.get() else {
             return extra;
         };
 
@@ -131,8 +128,8 @@ impl ConstraintDispatch for RedstoneRepeater {
             .redstate()
             .set_power(if incoming.redstate().is_on() { 16 } else { 0 });
 
-        if let Some(outgoing) = &self.outgoing {
-            extra.push(Constraint::new(outgoing.clone(), ctxt.current_frame));
+        if let Some(outgoing) = self.outgoing.get() {
+            extra.push(Constraint::new(outgoing, ctxt.current_frame));
         }
 
         extra
@@ -143,20 +140,20 @@ impl ConstraintDispatch for RedstoneRepeater {
     }
 }
 
-pub enum RedstoneNode {
-    Torch(RedstoneTorch),
-    Dust(RedstoneDust),
-    Block(Block),
-    Repeater(RedstoneRepeater),
+pub enum RedstoneNode<'rctx> {
+    Torch(RedstoneTorch<'rctx>),
+    Dust(RedstoneDust<'rctx>),
+    Block(Block<'rctx>),
+    Repeater(RedstoneRepeater<'rctx>),
 }
 
-pub struct Redstone {
+pub struct Redstone<'rctx> {
     name: String,
     redstate: Redstate,
-    node: RefCell<RedstoneNode>,
+    node: RedstoneNode<'rctx>,
 }
 
-impl Redstone {
+impl<'rctx> Redstone<'rctx> {
     pub fn name(&self) -> String {
         self.name.clone()
     }
@@ -165,63 +162,63 @@ impl Redstone {
         &self.redstate
     }
 
-    pub fn node(&self) -> impl Deref<Target = RedstoneNode> + '_ {
-        self.node.borrow()
+    pub fn node(&self) -> &RedstoneNode<'rctx> {
+        &self.node
     }
 
-    pub fn node_mut(&self) -> impl DerefMut<Target = RedstoneNode> + '_ {
-        self.node.borrow_mut()
-    }
+    // pub fn node_mut(&self) -> &'rctx mut RedstoneNode {
+    //     &mut self.node
+    // }
 
-    pub fn torch(name: &str) -> RedstoneRef {
-        Rc::new(Redstone {
+    pub fn torch(name: &str) -> Redstone {
+        Redstone {
             name: String::from(name),
             redstate: Redstate::zero(),
-            node: RefCell::new(RedstoneNode::Torch(RedstoneTorch {
-                incoming: None,
-                outgoing: Vec::new(),
-            })),
-        })
+            node: RedstoneNode::Torch(RedstoneTorch {
+                incoming: Cell::new(None),
+                outgoing: RefCell::new(Vec::new()),
+            }),
+        }
     }
 
-    pub fn dust(name: &str) -> RedstoneRef {
-        Rc::new(Redstone {
+    pub fn dust(name: &str) -> Redstone {
+        Redstone {
             name: String::from(name),
             redstate: Redstate::zero(),
-            node: RefCell::new(RedstoneNode::Dust(RedstoneDust {
-                neighbors: Vec::new(),
-                sources: Vec::new(),
-            })),
-        })
+            node: RedstoneNode::Dust(RedstoneDust {
+                neighbors: RefCell::new(Vec::new()),
+                sources: RefCell::new(Vec::new()),
+            }),
+        }
     }
 
-    pub fn block(name: &str) -> RedstoneRef {
-        Rc::new(Redstone {
+    pub fn block(name: &str) -> Redstone {
+        Redstone {
             name: String::from(name),
             redstate: Redstate::zero(),
-            node: RefCell::new(RedstoneNode::Block(Block {
-                incoming: Vec::new(),
-                outgoing: Vec::new(),
-            })),
-        })
+            node: RedstoneNode::Block(Block {
+                incoming: RefCell::new(Vec::new()),
+                outgoing: RefCell::new(Vec::new()),
+            }),
+        }
     }
 
-    pub fn repeater(name: &str, delay: u8) -> RedstoneRef {
+    pub fn repeater(name: &str, delay: u8) -> Redstone {
         assert!((1..=4).contains(&delay));
-        Rc::new(Redstone {
+        Redstone {
             name: String::from(name),
             redstate: Redstate::zero(),
-            node: RefCell::new(RedstoneNode::Repeater(RedstoneRepeater {
+            node: RedstoneNode::Repeater(RedstoneRepeater {
                 delay: Frame(delay.into()),
-                incoming: None,
-                outgoing: None,
-                neighbors: Vec::new(),
-            })),
-        })
+                incoming: Cell::new(None),
+                outgoing: Cell::new(None),
+                neighbors: RefCell::new(Vec::new()),
+            }),
+        }
     }
 
     fn is_directed(&self) -> bool {
-        match *self.node() {
+        match self.node() {
             RedstoneNode::Torch(..) => true,
             RedstoneNode::Dust(..) => false,
             RedstoneNode::Block(..) => false,
@@ -234,15 +231,15 @@ impl Redstone {
     }
 }
 
-impl Display for Redstone {
+impl<'rctx> Display for Redstone<'rctx> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(self.name().as_str())
     }
 }
 
-impl ConstraintDispatch for Redstone {
-    fn dispatch(&self, ctxt: ConstraintCtxt) -> Vec<Rc<Constraint>> {
-        match &*self.node() {
+impl<'rctx> ConstraintDispatch<'rctx> for Redstone<'rctx> {
+    fn dispatch(&self, ctxt: ConstraintCtxt<'rctx>) -> Vec<Rc<Constraint<'rctx>>> {
+        match self.node() {
             RedstoneNode::Torch(torch) => torch.dispatch(ctxt),
             RedstoneNode::Dust(dust) => dust.dispatch(ctxt),
             RedstoneNode::Block(block) => block.dispatch(ctxt),
@@ -251,7 +248,7 @@ impl ConstraintDispatch for Redstone {
     }
 
     fn dispatch_frame_offset(&self) -> Frame {
-        match &*self.node() {
+        match self.node() {
             RedstoneNode::Torch(torch) => torch.dispatch_frame_offset(),
             RedstoneNode::Dust(dust) => dust.dispatch_frame_offset(),
             RedstoneNode::Block(block) => block.dispatch_frame_offset(),
@@ -260,69 +257,69 @@ impl ConstraintDispatch for Redstone {
     }
 }
 
-pub fn link(here: &RedstoneRef, there: &RedstoneRef) {
-    match &mut *here.node_mut() {
+pub fn link<'rctx>(here: &'rctx Redstone<'rctx>, there: &'rctx Redstone<'rctx>) {
+    match here.node() {
         RedstoneNode::Torch(torch) => {
-            assert!(torch.outgoing.len() <= 5);
-            torch.outgoing.push(Rc::clone(there));
+            assert!(torch.outgoing.borrow().len() <= 5);
+            torch.outgoing.borrow_mut().push(there);
         }
         RedstoneNode::Dust(dust) => {
-            assert!(dust.neighbors.len() <= 6);
-            dust.neighbors.push(Rc::clone(there));
+            assert!(dust.neighbors.borrow().len() <= 6);
+            dust.neighbors.borrow_mut().push(there);
         }
         RedstoneNode::Block(block) => {
-            assert!(block.outgoing.len() <= 6);
-            block.outgoing.push(Rc::clone(there));
+            assert!(block.outgoing.borrow().len() <= 6);
+            block.outgoing.borrow_mut().push(there);
         }
         RedstoneNode::Repeater(repeater) => {
-            assert!(repeater.outgoing.is_none());
-            repeater.outgoing = Some(there.clone());
+            assert!(repeater.outgoing.get().is_none());
+            repeater.outgoing.set(Some(there));
         }
     }
 
-    match &mut *there.node_mut() {
+    match there.node() {
         RedstoneNode::Torch(torch) => {
-            assert!(torch.incoming.is_none());
-            torch.incoming = Some(Rc::clone(here));
+            assert!(torch.incoming.get().is_none());
+            torch.incoming.set(Some(here));
         }
         RedstoneNode::Dust(dust) => {
             if here.is_undirected() {
-                assert!(dust.neighbors.len() <= 6);
-                dust.neighbors.push(Rc::clone(here));
+                assert!(dust.neighbors.borrow().len() <= 6);
+                dust.neighbors.borrow_mut().push(here);
             }
         }
         RedstoneNode::Block(block) => {
-            assert!(block.incoming.len() <= 6);
-            block.incoming.push(Rc::clone(here));
+            assert!(block.incoming.borrow().len() <= 6);
+            block.incoming.borrow_mut().push(here);
         }
         RedstoneNode::Repeater(repeater) => {
             if here.is_undirected() {
-                assert!(repeater.incoming.is_none());
-                repeater.incoming = Some(here.clone());
+                assert!(repeater.incoming.get().is_none());
+                repeater.incoming.set(Some(here));
             }
         }
     }
 }
 
-pub fn add_weighted_edge(dust: &RedstoneRef, source: &RedstoneRef, weight: u8) {
-    let RedstoneNode::Dust(ref mut dust) = *dust.node_mut() else {
+pub fn add_weighted_edge<'rctx>(dust: &'rctx Redstone<'rctx>, source: &'rctx Redstone<'rctx>, weight: u8) {
+    let RedstoneNode::Dust(dust) = dust.node() else {
         panic!("`dust` must be a RedstoneDust");
     };
 
-    if let RedstoneNode::Dust(..) = *source.node() {
+    if let RedstoneNode::Dust(..) = source.node() {
         panic!("`source` cannot be a RedstoneDust");
     }
 
-    dust.sources.push((weight, source.clone()));
+    dust.sources.borrow_mut().push((weight, source));
 }
 
-pub fn lock(repeater: &RedstoneRef, edge: &RedstoneRef) {
-    let RedstoneNode::Repeater(ref mut repeater) = *repeater.node_mut() else {
+pub fn lock<'rctx>(repeater: &'rctx Redstone<'rctx>, edge: &'rctx Redstone<'rctx>) {
+    let RedstoneNode::Repeater(repeater) = repeater.node() else {
         panic!("`repeater` must be a RedstoneRepeater");
     };
 
-    assert!((0..=2).contains(&repeater.neighbors.len()));
-    assert!(matches!(*edge.node(), RedstoneNode::Repeater(..))); // TODO: comparator too.
+    assert!((0..=2).contains(&repeater.neighbors.borrow().len()));
+    assert!(matches!(edge.node(), RedstoneNode::Repeater(..))); // TODO: comparator too.
 
-    repeater.neighbors.push(edge.clone());
+    repeater.neighbors.borrow_mut().push(edge);
 }

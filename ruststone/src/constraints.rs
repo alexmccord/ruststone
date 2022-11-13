@@ -5,7 +5,7 @@ use std::{
     rc::Rc,
 };
 
-use crate::{RedstoneNode, RedstoneRef};
+use crate::{RedstoneNode, Redstone};
 
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub(crate) struct Frame(pub(crate) u64);
@@ -13,24 +13,24 @@ pub(crate) struct Frame(pub(crate) u64);
 impl Add for Frame {
     type Output = Frame;
 
-    fn add(self, rhs: Frame) -> Self::Output {
+    fn add(self, rhs: Frame) -> Frame {
         Frame(self.0 + rhs.0)
     }
 }
 
-pub(crate) struct ConstraintCtxt {
+pub(crate) struct ConstraintCtxt<'rctx> {
     pub(crate) current_frame: Frame,
-    pub(crate) redstone: RedstoneRef,
+    pub(crate) redstone: &'rctx Redstone<'rctx>,
 }
 
-pub(crate) struct Constraint {
+pub(crate) struct Constraint<'rctx> {
     // The next frame this constraint can be dispatched.
     next_dispatch_frame: Frame,
-    redstone: RedstoneRef,
+    redstone: &'rctx Redstone<'rctx>,
 }
 
-impl Constraint {
-    pub(crate) fn new(redstone: RedstoneRef, next_dispatch_frame: Frame) -> Rc<Constraint> {
+impl<'rctx> Constraint<'rctx> {
+    pub(crate) fn new(redstone: &'rctx Redstone<'rctx>, next_dispatch_frame: Frame) -> Rc<Constraint> {
         Rc::new(Constraint {
             next_dispatch_frame,
             redstone,
@@ -41,29 +41,29 @@ impl Constraint {
         (self.next_dispatch_frame + self.redstone.dispatch_frame_offset()) <= current_frame
     }
 
-    fn dispatch(&self, frame: Frame) -> Vec<Rc<Constraint>> {
+    fn dispatch(&self, frame: Frame) -> Vec<Rc<Constraint<'rctx>>> {
         assert!(self.dispatchable(frame));
         self.redstone.dispatch(ConstraintCtxt {
             current_frame: frame,
-            redstone: self.redstone.clone(),
+            redstone: self.redstone,
         })
     }
 }
 
-pub(crate) trait ConstraintDispatch {
-    fn dispatch(&self, ctxt: ConstraintCtxt) -> Vec<Rc<Constraint>>;
+pub(crate) trait ConstraintDispatch<'rctx> {
+    fn dispatch(&self, ctxt: ConstraintCtxt<'rctx>) -> Vec<Rc<Constraint<'rctx>>>;
 
     fn dispatch_frame_offset(&self) -> Frame;
 }
 
-struct ConstraintSolvingEvent<'a>(String, &'a RefCell<Vec<String>>);
+struct ConstraintSolvingEvent<'rctx>(String, &'rctx RefCell<Vec<String>>);
 
-impl<'a> ConstraintSolvingEvent<'a> {
-    fn new(vec: &'a RefCell<Vec<String>>) -> ConstraintSolvingEvent {
+impl<'rctx> ConstraintSolvingEvent<'rctx> {
+    fn new(vec: &'rctx RefCell<Vec<String>>) -> ConstraintSolvingEvent {
         ConstraintSolvingEvent(String::new(), vec)
     }
 
-    fn write<T: ToString>(self, str: T) -> ConstraintSolvingEvent<'a> {
+    fn write<T: ToString>(self, str: T) -> ConstraintSolvingEvent<'rctx> {
         if self.0.is_empty() {
             ConstraintSolvingEvent(str.to_string(), self.1)
         } else {
@@ -76,20 +76,20 @@ impl<'a> ConstraintSolvingEvent<'a> {
     }
 }
 
-pub struct ConstraintGraph {
-    constraints: Vec<Rc<Constraint>>,
+pub struct ConstraintGraph<'rctx> {
+    constraints: Vec<Rc<Constraint<'rctx>>>,
     events: RefCell<Vec<String>>,
 }
 
-impl ConstraintGraph {
-    fn new() -> ConstraintGraph {
+impl<'rctx> ConstraintGraph<'rctx> {
+    fn new() -> ConstraintGraph<'rctx> {
         ConstraintGraph {
             constraints: Vec::new(),
             events: RefCell::new(Vec::new()),
         }
     }
 
-    pub fn collect(redstone: RedstoneRef) -> ConstraintGraph {
+    pub fn collect(redstone: &'rctx Redstone<'rctx>) -> ConstraintGraph {
         let mut visited = HashSet::new();
         let mut queue = VecDeque::new();
         queue.push_front(redstone);
@@ -97,57 +97,57 @@ impl ConstraintGraph {
         let mut cg = ConstraintGraph::new();
 
         while let Some(current) = queue.pop_front() {
-            if visited.contains(&Rc::as_ptr(&current)) {
+            if visited.contains(&(current as *const Redstone<'rctx>)) {
                 continue;
             }
 
-            visited.insert(Rc::as_ptr(&current));
+            visited.insert(current as *const Redstone);
 
-            match *current.node() {
-                RedstoneNode::Torch(ref torch) => {
+            match current.node() {
+                RedstoneNode::Torch(torch) => {
                     cg.constraints
-                        .push(Constraint::new(current.clone(), Frame(0)));
+                        .push(Constraint::new(current, Frame(0)));
 
-                    if let Some(incoming) = &torch.incoming {
-                        queue.push_back(incoming.clone())
+                    if let Some(incoming) = torch.incoming.get() {
+                        queue.push_back(incoming);
                     }
 
-                    for outgoing in torch.outgoing.iter() {
-                        queue.push_back(outgoing.clone());
+                    for outgoing in torch.outgoing.borrow().iter() {
+                        queue.push_back(outgoing);
                     }
                 }
-                RedstoneNode::Dust(ref dust) => {
-                    for neighbor in dust.neighbors.iter() {
-                        queue.push_back(neighbor.clone());
+                RedstoneNode::Dust(dust) => {
+                    for neighbor in dust.neighbors.borrow().iter() {
+                        queue.push_back(neighbor);
                     }
 
-                    for (_, source) in dust.sources.iter() {
-                        queue.push_back(source.clone());
+                    for (_, source) in dust.sources.borrow().iter() {
+                        queue.push_back(source);
                     }
                 }
-                RedstoneNode::Block(ref block) => {
-                    for incoming in block.incoming.iter() {
-                        queue.push_back(incoming.clone());
+                RedstoneNode::Block(block) => {
+                    for incoming in block.incoming.borrow().iter() {
+                        queue.push_back(incoming);
                     }
 
-                    for outgoing in block.outgoing.iter() {
-                        queue.push_back(outgoing.clone());
+                    for outgoing in block.outgoing.borrow().iter() {
+                        queue.push_back(outgoing);
                     }
                 }
-                RedstoneNode::Repeater(ref repeater) => {
+                RedstoneNode::Repeater(repeater) => {
                     // TODO: This is probably too fragile to rely on for deterministic locking
                     // on this repeater where the neighbors also lock this at the same time.
                     // I'm not sure yet.
-                    for neighbor in &repeater.neighbors {
-                        queue.push_back(neighbor.clone());
+                    for neighbor in repeater.neighbors.borrow().iter() {
+                        queue.push_back(neighbor);
                     }
 
-                    if let Some(incoming) = &repeater.incoming {
-                        queue.push_back(incoming.clone());
+                    if let Some(incoming) = repeater.incoming.get() {
+                        queue.push_back(incoming);
                     }
 
-                    if let Some(outgoing) = &repeater.outgoing {
-                        queue.push_back(outgoing.clone());
+                    if let Some(outgoing) = repeater.outgoing.get() {
+                        queue.push_back(outgoing);
                     }
                 }
             }
@@ -165,7 +165,7 @@ impl ConstraintGraph {
             while let Some(c) = queue.pop_front() {
                 if !c.dispatchable(frame) {
                     self.new_event()
-                        .write(&c.redstone)
+                        .write(c.redstone)
                         .write("was deferred")
                         .push();
                     deferred.push_back(c);
@@ -177,7 +177,7 @@ impl ConstraintGraph {
                 let new_state = c.redstone.redstate().clone();
 
                 self.new_event()
-                    .write(&c.redstone)
+                    .write(c.redstone)
                     .write("was dispatched, previously")
                     .write(previous_state.is_on())
                     .write("and now")
@@ -205,12 +205,13 @@ impl ConstraintGraph {
                     .iter()
                     .map(|c| c.next_dispatch_frame + c.redstone.dispatch_frame_offset())
                     .min();
-                frame = earliest_dispatchable_frame.unwrap();
 
                 self.new_event()
                     .write("advancing to frame")
                     .write(frame.0)
                     .push();
+
+                frame = earliest_dispatchable_frame.unwrap();
             }
 
             queue = deferred;
