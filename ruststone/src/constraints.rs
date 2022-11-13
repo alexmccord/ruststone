@@ -5,7 +5,7 @@ use std::{
     rc::Rc,
 };
 
-use crate::{RedstoneNode, Redstone};
+use crate::{Redstone, RedstoneNode};
 
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub(crate) struct Frame(pub(crate) u64);
@@ -30,7 +30,10 @@ pub(crate) struct Constraint<'rctx> {
 }
 
 impl<'rctx> Constraint<'rctx> {
-    pub(crate) fn new(redstone: &'rctx Redstone<'rctx>, next_dispatch_frame: Frame) -> Rc<Constraint> {
+    pub(crate) fn new(
+        redstone: &'rctx Redstone<'rctx>,
+        next_dispatch_frame: Frame,
+    ) -> Rc<Constraint> {
         Rc::new(Constraint {
             next_dispatch_frame,
             redstone,
@@ -105,8 +108,7 @@ impl<'rctx> ConstraintGraph<'rctx> {
 
             match current.node() {
                 RedstoneNode::Torch(torch) => {
-                    cg.constraints
-                        .push(Constraint::new(current, Frame(0)));
+                    cg.constraints.push(Constraint::new(current, Frame(0)));
 
                     if let Some(incoming) = torch.incoming.get() {
                         queue.push_back(incoming);

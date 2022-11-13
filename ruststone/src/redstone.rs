@@ -1,6 +1,7 @@
 use std::{
+    cell::{Cell, RefCell},
     fmt::Display,
-    rc::Rc, cell::{Cell, RefCell}
+    rc::Rc,
 };
 
 use crate::{
@@ -82,7 +83,11 @@ impl<'rctx> ConstraintDispatch<'rctx> for Block<'rctx> {
         let mut extra = Vec::new();
 
         let has_power = self.incoming.borrow().iter().any(|r| r.redstate().is_on());
-        let is_forced = self.incoming.borrow().iter().any(|r| r.redstate().is_forced());
+        let is_forced = self
+            .incoming
+            .borrow()
+            .iter()
+            .any(|r| r.redstate().is_forced());
 
         ctxt.redstone.redstate().set_forced(has_power);
         ctxt.redstone
@@ -301,7 +306,11 @@ pub fn link<'rctx>(here: &'rctx Redstone<'rctx>, there: &'rctx Redstone<'rctx>) 
     }
 }
 
-pub fn add_weighted_edge<'rctx>(dust: &'rctx Redstone<'rctx>, source: &'rctx Redstone<'rctx>, weight: u8) {
+pub fn add_weighted_edge<'rctx>(
+    dust: &'rctx Redstone<'rctx>,
+    source: &'rctx Redstone<'rctx>,
+    weight: u8,
+) {
     let RedstoneNode::Dust(dust) = dust.node() else {
         panic!("`dust` must be a RedstoneDust");
     };

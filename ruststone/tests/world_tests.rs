@@ -1,8 +1,4 @@
-use ruststone::{
-    blocks::Block,
-    world::World,
-    vec3::Vec3,
-};
+use ruststone::{blocks::Block, vec3::Vec3, world::World};
 
 #[test]
 fn subscripting() {
