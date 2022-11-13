@@ -317,11 +317,7 @@ pub fn link<'r>(here: &'r Redstone<'r>, there: &'r Redstone<'r>) {
     }
 }
 
-pub fn add_weighted_edge<'r>(
-    dust: &'r Redstone<'r>,
-    source: &'r Redstone<'r>,
-    weight: u8,
-) {
+pub fn add_weighted_edge<'r>(dust: &'r Redstone<'r>, source: &'r Redstone<'r>, weight: u8) {
     let RedstoneNode::Dust(dust) = dust.node() else {
         panic!("`dust` must be a RedstoneDust");
     };

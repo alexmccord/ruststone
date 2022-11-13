@@ -2,8 +2,8 @@ mod constraints;
 mod redstate;
 mod redstone;
 
-pub mod blocks;
 pub mod vec3;
+pub mod voxels;
 pub mod world;
 
 pub use constraints::ConstraintGraph;

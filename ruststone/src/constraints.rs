@@ -30,10 +30,7 @@ pub(crate) struct Constraint<'r> {
 }
 
 impl<'r> Constraint<'r> {
-    pub(crate) fn new(
-        redstone: &'r Redstone<'r>,
-        next_dispatch_frame: Frame,
-    ) -> Rc<Constraint> {
+    pub(crate) fn new(redstone: &'r Redstone<'r>, next_dispatch_frame: Frame) -> Rc<Constraint> {
         Rc::new(Constraint {
             next_dispatch_frame,
             redstone,

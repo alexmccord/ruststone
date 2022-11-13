@@ -1,4 +1,7 @@
-use std::{ops::{Add, Sub}, fmt::Display};
+use std::{
+    fmt::Display,
+    ops::{Add, Sub},
+};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Hash)]
 pub struct Vec3(pub i32, pub i32, pub i32);
@@ -14,6 +17,30 @@ impl Vec3 {
 
     pub fn z(self) -> i32 {
         self.2
+    }
+
+    pub fn up(self) -> Vec3 {
+        self + Vec3(0, 1, 0)
+    }
+
+    pub fn down(self) -> Vec3 {
+        self - Vec3(0, 1, 0)
+    }
+
+    pub fn left(self) -> Vec3 {
+        self - Vec3(1, 0, 0)
+    }
+
+    pub fn right(self) -> Vec3 {
+        self + Vec3(1, 0, 0)
+    }
+
+    pub fn front(self) -> Vec3 {
+        self + Vec3(0, 0, 1)
+    }
+
+    pub fn back(self) -> Vec3 {
+        self - Vec3(0, 0, 1)
     }
 }
 
