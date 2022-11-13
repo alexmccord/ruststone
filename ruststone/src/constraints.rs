@@ -100,7 +100,7 @@ impl<'r> ConstraintGraph<'r> {
         let mut cg = ConstraintGraph::new();
 
         while let Some(current) = queue.pop_front() {
-            if visited.contains(&(current as *const Redstone<'r>)) {
+            if visited.contains(&(current as *const Redstone)) {
                 continue;
             }
 
