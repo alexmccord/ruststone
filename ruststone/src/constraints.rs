@@ -18,20 +18,20 @@ impl Add for Frame {
     }
 }
 
-pub(crate) struct ConstraintCtxt<'rctx> {
+pub(crate) struct ConstraintCtxt<'r> {
     pub(crate) current_frame: Frame,
-    pub(crate) redstone: &'rctx Redstone<'rctx>,
+    pub(crate) redstone: &'r Redstone<'r>,
 }
 
-pub(crate) struct Constraint<'rctx> {
+pub(crate) struct Constraint<'r> {
     // The next frame this constraint can be dispatched.
     next_dispatch_frame: Frame,
-    redstone: &'rctx Redstone<'rctx>,
+    redstone: &'r Redstone<'r>,
 }
 
-impl<'rctx> Constraint<'rctx> {
+impl<'r> Constraint<'r> {
     pub(crate) fn new(
-        redstone: &'rctx Redstone<'rctx>,
+        redstone: &'r Redstone<'r>,
         next_dispatch_frame: Frame,
     ) -> Rc<Constraint> {
         Rc::new(Constraint {
@@ -44,7 +44,7 @@ impl<'rctx> Constraint<'rctx> {
         (self.next_dispatch_frame + self.redstone.dispatch_frame_offset()) <= current_frame
     }
 
-    fn dispatch(&self, frame: Frame) -> Vec<Rc<Constraint<'rctx>>> {
+    fn dispatch(&self, frame: Frame) -> Vec<Rc<Constraint<'r>>> {
         assert!(self.dispatchable(frame));
         self.redstone.dispatch(ConstraintCtxt {
             current_frame: frame,
@@ -53,20 +53,20 @@ impl<'rctx> Constraint<'rctx> {
     }
 }
 
-pub(crate) trait ConstraintDispatch<'rctx> {
-    fn dispatch(&self, ctxt: ConstraintCtxt<'rctx>) -> Vec<Rc<Constraint<'rctx>>>;
+pub(crate) trait ConstraintDispatch<'r> {
+    fn dispatch(&self, ctxt: ConstraintCtxt<'r>) -> Vec<Rc<Constraint<'r>>>;
 
     fn dispatch_frame_offset(&self) -> Frame;
 }
 
-struct ConstraintSolvingEvent<'rctx>(String, &'rctx RefCell<Vec<String>>);
+struct ConstraintSolvingEvent<'r>(String, &'r RefCell<Vec<String>>);
 
-impl<'rctx> ConstraintSolvingEvent<'rctx> {
-    fn new(vec: &'rctx RefCell<Vec<String>>) -> ConstraintSolvingEvent {
+impl<'r> ConstraintSolvingEvent<'r> {
+    fn new(vec: &'r RefCell<Vec<String>>) -> ConstraintSolvingEvent {
         ConstraintSolvingEvent(String::new(), vec)
     }
 
-    fn write<T: ToString>(self, str: T) -> ConstraintSolvingEvent<'rctx> {
+    fn write<T: ToString>(self, str: T) -> ConstraintSolvingEvent<'r> {
         if self.0.is_empty() {
             ConstraintSolvingEvent(str.to_string(), self.1)
         } else {
@@ -79,20 +79,20 @@ impl<'rctx> ConstraintSolvingEvent<'rctx> {
     }
 }
 
-pub struct ConstraintGraph<'rctx> {
-    constraints: Vec<Rc<Constraint<'rctx>>>,
+pub struct ConstraintGraph<'r> {
+    constraints: Vec<Rc<Constraint<'r>>>,
     events: RefCell<Vec<String>>,
 }
 
-impl<'rctx> ConstraintGraph<'rctx> {
-    fn new() -> ConstraintGraph<'rctx> {
+impl<'r> ConstraintGraph<'r> {
+    fn new() -> ConstraintGraph<'r> {
         ConstraintGraph {
             constraints: Vec::new(),
             events: RefCell::new(Vec::new()),
         }
     }
 
-    pub fn collect(redstone: &'rctx Redstone<'rctx>) -> ConstraintGraph {
+    pub fn collect(redstone: &'r Redstone<'r>) -> ConstraintGraph {
         let mut visited = HashSet::new();
         let mut queue = VecDeque::new();
         queue.push_front(redstone);
@@ -100,7 +100,7 @@ impl<'rctx> ConstraintGraph<'rctx> {
         let mut cg = ConstraintGraph::new();
 
         while let Some(current) = queue.pop_front() {
-            if visited.contains(&(current as *const Redstone<'rctx>)) {
+            if visited.contains(&(current as *const Redstone<'r>)) {
                 continue;
             }
 
