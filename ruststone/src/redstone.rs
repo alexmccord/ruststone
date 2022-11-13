@@ -18,7 +18,9 @@ pub struct RedstoneArena<'rctx> {
 
 impl<'rctx> RedstoneArena<'rctx> {
     pub fn new() -> RedstoneArena<'rctx> {
-        RedstoneArena { arena: Arena::new() }
+        RedstoneArena {
+            arena: Arena::new(),
+        }
     }
 
     pub fn torch(&'rctx self, name: &str) -> &Redstone {
