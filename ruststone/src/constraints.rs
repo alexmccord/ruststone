@@ -82,7 +82,7 @@ pub struct ConstraintGraph<'r> {
 }
 
 impl<'r> ConstraintGraph<'r> {
-    fn new() -> ConstraintGraph<'r> {
+    pub(crate) fn new() -> ConstraintGraph<'r> {
         ConstraintGraph {
             constraints: Vec::new(),
             events: RefCell::new(Vec::new()),
@@ -167,6 +167,7 @@ impl<'r> ConstraintGraph<'r> {
                         .write(c.redstone)
                         .write("was deferred")
                         .push();
+
                     deferred.push_back(c);
                     continue;
                 }

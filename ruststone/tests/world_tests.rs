@@ -1,4 +1,8 @@
-use ruststone::{vec3::Vec3, voxels::Voxel, world::World};
+use ruststone::{
+    vec3::Vec3,
+    voxels::Voxel,
+    world::World,
+};
 
 #[test]
 fn subscripting() {
