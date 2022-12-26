@@ -1,7 +1,8 @@
 use std::{
     cell::{Cell, RefCell},
+    collections::{HashSet, VecDeque},
     fmt::Display,
-    rc::Rc, collections::{VecDeque, HashSet},
+    rc::Rc,
 };
 
 use typed_arena::Arena;

@@ -1,9 +1,4 @@
-use std::{
-    cell::RefCell,
-    collections::VecDeque,
-    ops::Add,
-    rc::Rc,
-};
+use std::{cell::RefCell, collections::VecDeque, ops::Add, rc::Rc};
 
 use crate::{Redstone, RedstoneNode};
 
@@ -92,7 +87,6 @@ impl<'r> ConstraintGraph<'r> {
     pub fn collect(redstone: &'r Redstone<'r>) -> ConstraintGraph {
         let mut cg = ConstraintGraph::new();
 
-        // for each redstone in redstone s.t. it's a torch
         for redstone in redstone.into_iter() {
             if let RedstoneNode::Torch(..) = redstone.node() {
                 cg.constraints.push(Constraint::new(redstone, Frame(0)));

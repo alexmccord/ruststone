@@ -1,14 +1,16 @@
 use std::{
     cell::RefCell,
-    ops::{Index, IndexMut}, collections::{VecDeque, HashSet},
+    collections::{HashSet, VecDeque},
+    ops::{Index, IndexMut},
 };
 
 use fnv::FnvHashMap;
 
 use crate::{
+    add_weighted_edge,
     vec3::Vec3,
     voxels::{DustVoxel, Facing, TorchVoxel, Voxel},
-    ConstraintGraph, Redstone, RedstoneArena, add_weighted_edge,
+    ConstraintGraph, Redstone, RedstoneArena,
 };
 
 // Not the greatest name. Should rename first chance a better name comes up.
