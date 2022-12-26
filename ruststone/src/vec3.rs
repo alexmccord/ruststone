@@ -6,6 +6,14 @@ use std::{
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Hash)]
 pub struct Vec3(pub i32, pub i32, pub i32);
 
+/// We'd like to copy Minecraft's coordinate system so that it's trivial to
+/// put in the coordinates or create software that interacts with ruststone.
+///
+/// A fresh reminder on Minecraft's coordinate system:
+///
+/// Heading up means to increment the Y-axis, and down to decrement the Y-axis.
+/// Heading west means to increment the X-axis, and east to decrement the X-axis.
+/// Heading north means to decrement the Z-axis, and south to increment the Z-axis.
 impl Vec3 {
     pub fn x(self) -> i32 {
         self.0
@@ -19,6 +27,10 @@ impl Vec3 {
         self.2
     }
 
+    pub fn abs(self) -> Vec3 {
+        Vec3(self.x().abs(), self.y().abs(), self.z().abs())
+    }
+
     pub fn up(self) -> Vec3 {
         self + Vec3(0, 1, 0)
     }
@@ -27,20 +39,20 @@ impl Vec3 {
         self - Vec3(0, 1, 0)
     }
 
-    pub fn left(self) -> Vec3 {
-        self - Vec3(1, 0, 0)
-    }
-
-    pub fn right(self) -> Vec3 {
+    pub fn west(self) -> Vec3 {
         self + Vec3(1, 0, 0)
     }
 
-    pub fn front(self) -> Vec3 {
-        self + Vec3(0, 0, 1)
+    pub fn east(self) -> Vec3 {
+        self - Vec3(1, 0, 0)
     }
 
-    pub fn back(self) -> Vec3 {
+    pub fn north(self) -> Vec3 {
         self - Vec3(0, 0, 1)
+    }
+
+    pub fn south(self) -> Vec3 {
+        self + Vec3(0, 0, 1)
     }
 }
 

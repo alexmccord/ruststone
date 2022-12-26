@@ -1,7 +1,7 @@
 use std::{
     cell::{Cell, RefCell},
     fmt::Display,
-    rc::Rc,
+    rc::Rc, collections::{VecDeque, HashSet},
 };
 
 use typed_arena::Arena;
@@ -288,6 +288,91 @@ impl<'r> Redstone<'r> {
                 }
             }
         }
+    }
+}
+
+pub struct RedstoneIter<'r> {
+    queue: VecDeque<&'r Redstone<'r>>,
+    visited: HashSet<*const Redstone<'r>>,
+}
+
+impl<'r> Iterator for RedstoneIter<'r> {
+    type Item = &'r Redstone<'r>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        while let Some(current) = self.queue.pop_front() {
+            if self.visited.contains(&(current as *const Redstone)) {
+                continue;
+            }
+
+            self.visited.insert(current as *const Redstone);
+
+            match current.node() {
+                RedstoneNode::Torch(torch) => {
+                    if let Some(incoming) = torch.incoming.get() {
+                        self.queue.push_back(incoming);
+                    }
+
+                    for outgoing in torch.outgoing.borrow().iter() {
+                        self.queue.push_back(outgoing);
+                    }
+                }
+                RedstoneNode::Dust(dust) => {
+                    for neighbor in dust.neighbors.borrow().iter() {
+                        self.queue.push_back(neighbor);
+                    }
+
+                    for (_, source) in dust.sources.borrow().iter() {
+                        self.queue.push_back(source);
+                    }
+                }
+                RedstoneNode::Block(block) => {
+                    for incoming in block.incoming.borrow().iter() {
+                        self.queue.push_back(incoming);
+                    }
+
+                    for outgoing in block.outgoing.borrow().iter() {
+                        self.queue.push_back(outgoing);
+                    }
+                }
+                RedstoneNode::Repeater(repeater) => {
+                    // TODO: This is probably too fragile to rely on for deterministic locking
+                    // on this repeater where the neighbors also lock this at the same time.
+                    // I'm not sure yet.
+                    for neighbor in repeater.neighbors.borrow().iter() {
+                        self.queue.push_back(neighbor);
+                    }
+
+                    if let Some(incoming) = repeater.incoming.get() {
+                        self.queue.push_back(incoming);
+                    }
+
+                    if let Some(outgoing) = repeater.outgoing.get() {
+                        self.queue.push_back(outgoing);
+                    }
+                }
+            }
+
+            return Some(current);
+        }
+
+        None
+    }
+}
+
+impl<'r> IntoIterator for &'r Redstone<'r> {
+    type Item = &'r Redstone<'r>;
+    type IntoIter = RedstoneIter<'r>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        let mut iter = RedstoneIter {
+            queue: VecDeque::new(),
+            visited: HashSet::new(),
+        };
+
+        iter.queue.push_front(self);
+
+        iter
     }
 }
 

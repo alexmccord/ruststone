@@ -1,6 +1,6 @@
 use std::{
     cell::RefCell,
-    collections::{HashSet, VecDeque},
+    collections::VecDeque,
     ops::Add,
     rc::Rc,
 };
@@ -90,65 +90,12 @@ impl<'r> ConstraintGraph<'r> {
     }
 
     pub fn collect(redstone: &'r Redstone<'r>) -> ConstraintGraph {
-        let mut visited = HashSet::new();
-        let mut queue = VecDeque::new();
-        queue.push_front(redstone);
-
         let mut cg = ConstraintGraph::new();
 
-        while let Some(current) = queue.pop_front() {
-            if visited.contains(&(current as *const Redstone)) {
-                continue;
-            }
-
-            visited.insert(current as *const Redstone);
-
-            match current.node() {
-                RedstoneNode::Torch(torch) => {
-                    cg.constraints.push(Constraint::new(current, Frame(0)));
-
-                    if let Some(incoming) = torch.incoming.get() {
-                        queue.push_back(incoming);
-                    }
-
-                    for outgoing in torch.outgoing.borrow().iter() {
-                        queue.push_back(outgoing);
-                    }
-                }
-                RedstoneNode::Dust(dust) => {
-                    for neighbor in dust.neighbors.borrow().iter() {
-                        queue.push_back(neighbor);
-                    }
-
-                    for (_, source) in dust.sources.borrow().iter() {
-                        queue.push_back(source);
-                    }
-                }
-                RedstoneNode::Block(block) => {
-                    for incoming in block.incoming.borrow().iter() {
-                        queue.push_back(incoming);
-                    }
-
-                    for outgoing in block.outgoing.borrow().iter() {
-                        queue.push_back(outgoing);
-                    }
-                }
-                RedstoneNode::Repeater(repeater) => {
-                    // TODO: This is probably too fragile to rely on for deterministic locking
-                    // on this repeater where the neighbors also lock this at the same time.
-                    // I'm not sure yet.
-                    for neighbor in repeater.neighbors.borrow().iter() {
-                        queue.push_back(neighbor);
-                    }
-
-                    if let Some(incoming) = repeater.incoming.get() {
-                        queue.push_back(incoming);
-                    }
-
-                    if let Some(outgoing) = repeater.outgoing.get() {
-                        queue.push_back(outgoing);
-                    }
-                }
+        // for each redstone in redstone s.t. it's a torch
+        for redstone in redstone.into_iter() {
+            if let RedstoneNode::Torch(..) = redstone.node() {
+                cg.constraints.push(Constraint::new(redstone, Frame(0)));
             }
         }
 

@@ -1,31 +1,38 @@
-use ruststone::{
-    vec3::Vec3,
-    voxels::Voxel,
-    world::World,
-};
+use ruststone::{vec3::Vec3, voxels::Voxel, world::World};
 
 #[test]
 fn subscripting() {
     let world = World::new();
 
-    assert!(matches!(world[Vec3(0, 0, 0)], Voxel::Air));
+    assert!(world[Vec3(0, 0, 0)].is_air());
 }
 
 #[test]
 fn subscripting_mut() {
     let mut world = World::new();
-    world[Vec3(0, 0, 0)] = Voxel::Stone;
+    world[Vec3(0, 0, 0)] = Voxel::stone().voxel();
 
-    assert!(matches!(world[Vec3(0, 0, 0)], Voxel::Stone));
+    assert!(world[Vec3(0, 0, 0)].is_stone());
 }
 
 #[test]
 fn put_a_torch_on() {
     let mut world = World::new();
 
-    world[Vec3(0, 1, 0)] = Voxel::torch(None);
-    world[Vec3(0, 0, 0)] = Voxel::stone();
+    world[Vec3(0, 1, 0)] = Voxel::torch().voxel();
+    world[Vec3(0, 0, 0)] = Voxel::stone().voxel();
 
-    assert!(matches!(world[Vec3(0, 1, 0)], Voxel::Torch(..)));
-    assert!(matches!(world[Vec3(0, 0, 0)], Voxel::Stone));
+    assert!(world[Vec3(0, 1, 0)].is_torch());
+    assert!(world[Vec3(0, 0, 0)].is_stone());
+}
+
+#[test]
+fn identical_vec3s() {
+    let mut world = World::new();
+
+    world[Vec3(0, 1, 2)] = Voxel::torch().voxel();
+    world[Vec3(2, 1, 0)] = Voxel::stone().voxel();
+
+    assert!(world[Vec3(0, 1, 2)].is_torch());
+    assert!(world[Vec3(2, 1, 0)].is_stone());
 }
