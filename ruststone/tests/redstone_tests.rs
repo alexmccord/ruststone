@@ -7,7 +7,7 @@ fn torch_and_dust() {
     let torch = arena.make_torch("torch");
     let dust = arena.make_dust("dust");
 
-    ruststone::link(torch, dust);
+    torch.link(dust);
 
     ruststone::add_weighted_edge(dust, torch, 1);
 
@@ -27,9 +27,9 @@ fn torch_and_dust_and_dust_and_dust() {
     let dust2 = arena.make_dust("dust2");
     let dust3 = arena.make_dust("dust3");
 
-    ruststone::link(torch, dust1);
-    ruststone::link(dust1, dust2);
-    ruststone::link(dust2, dust3);
+    torch.link(dust1);
+    dust1.link(dust2);
+    dust2.link(dust3);
 
     ruststone::add_weighted_edge(dust1, torch, 1);
     ruststone::add_weighted_edge(dust2, torch, 2);
@@ -67,23 +67,23 @@ fn torch_and_dust_until_it_runs_out_of_redpower() {
     let dust16 = arena.make_dust("dust16");
     let dust17 = arena.make_dust("dust17");
 
-    ruststone::link(torch, dust1);
-    ruststone::link(dust1, dust2);
-    ruststone::link(dust2, dust3);
-    ruststone::link(dust3, dust4);
-    ruststone::link(dust4, dust5);
-    ruststone::link(dust5, dust6);
-    ruststone::link(dust6, dust7);
-    ruststone::link(dust7, dust8);
-    ruststone::link(dust8, dust9);
-    ruststone::link(dust9, dust10);
-    ruststone::link(dust10, dust11);
-    ruststone::link(dust11, dust12);
-    ruststone::link(dust12, dust13);
-    ruststone::link(dust13, dust14);
-    ruststone::link(dust14, dust15);
-    ruststone::link(dust15, dust16);
-    ruststone::link(dust16, dust17);
+    torch.link(dust1);
+    dust1.link(dust2);
+    dust2.link(dust3);
+    dust3.link(dust4);
+    dust4.link(dust5);
+    dust5.link(dust6);
+    dust6.link(dust7);
+    dust7.link(dust8);
+    dust8.link(dust9);
+    dust9.link(dust10);
+    dust10.link(dust11);
+    dust11.link(dust12);
+    dust12.link(dust13);
+    dust13.link(dust14);
+    dust14.link(dust15);
+    dust15.link(dust16);
+    dust16.link(dust17);
 
     ruststone::add_weighted_edge(dust1, torch, 1);
     ruststone::add_weighted_edge(dust2, torch, 2);
@@ -124,12 +124,12 @@ fn dust_in_the_middle_of_two_torches() {
     let dust5 = arena.make_dust("dust5");
     let torch_r = arena.make_torch("torch_r");
 
-    ruststone::link(torch_l, dust1);
-    ruststone::link(dust1, dust2);
-    ruststone::link(dust2, dust3);
-    ruststone::link(dust3, dust4);
-    ruststone::link(dust4, dust5);
-    ruststone::link(torch_r, dust5);
+    torch_l.link(dust1);
+    dust1.link(dust2);
+    dust2.link(dust3);
+    dust3.link(dust4);
+    dust4.link(dust5);
+    torch_r.link(dust5);
 
     ruststone::add_weighted_edge(dust1, torch_l, 1);
     ruststone::add_weighted_edge(dust2, torch_l, 2);
@@ -164,9 +164,9 @@ fn torch_is_off_if_its_incoming_edge_is_on() {
     let normal_block = arena.make_block("normal_block");
     let output = arena.make_torch("output");
 
-    ruststone::link(torch, dust);
-    ruststone::link(dust, normal_block);
-    ruststone::link(normal_block, output);
+    torch.link(dust);
+    dust.link(normal_block);
+    normal_block.link(output);
 
     ruststone::add_weighted_edge(dust, torch, 1);
 
@@ -189,9 +189,9 @@ fn torch_and_dust_and_block_and_dust() {
     let normal_block = arena.make_block("normal_block");
     let dust2 = arena.make_dust("dust2");
 
-    ruststone::link(torch, dust1);
-    ruststone::link(dust1, normal_block);
-    ruststone::link(normal_block, dust2);
+    torch.link(dust1);
+    dust1.link(normal_block);
+    normal_block.link(dust2);
 
     ruststone::add_weighted_edge(dust1, torch, 1);
 
@@ -223,19 +223,19 @@ fn and_gate() {
     let block_m = arena.make_block("block_m");
     let block_r = arena.make_block("block_r");
 
-    ruststone::link(input_l, dust_l);
-    ruststone::link(dust_l, block_l);
-    ruststone::link(block_l, and_l);
+    input_l.link(dust_l);
+    dust_l.link(block_l);
+    block_l.link(and_l);
 
-    ruststone::link(input_r, dust_r);
-    ruststone::link(dust_r, block_r);
-    ruststone::link(block_r, and_r);
+    input_r.link(dust_r);
+    dust_r.link(block_r);
+    block_r.link(and_r);
 
-    ruststone::link(and_l, dust_m);
-    ruststone::link(and_r, dust_m);
-    ruststone::link(dust_m, block_m);
+    and_l.link(dust_m);
+    and_r.link(dust_m);
+    dust_m.link(block_m);
 
-    ruststone::link(block_m, output);
+    block_m.link(output);
 
     ruststone::add_weighted_edge(dust_l, input_l, 1);
     ruststone::add_weighted_edge(dust_r, input_r, 1);
@@ -269,18 +269,18 @@ fn and_gate_with_one_arm_off() {
     let block_m = arena.make_block("block_m");
     let block_r = arena.make_block("block_r");
 
-    ruststone::link(dust_l, block_l);
-    ruststone::link(block_l, and_l);
+    dust_l.link(block_l);
+    block_l.link(and_l);
 
-    ruststone::link(input_r, dust_r);
-    ruststone::link(dust_r, block_r);
-    ruststone::link(block_r, and_r);
+    input_r.link(dust_r);
+    dust_r.link(block_r);
+    block_r.link(and_r);
 
-    ruststone::link(and_l, dust_m);
-    ruststone::link(and_r, dust_m);
-    ruststone::link(dust_m, block_m);
+    and_l.link(dust_m);
+    and_r.link(dust_m);
+    dust_m.link(block_m);
 
-    ruststone::link(block_m, output);
+    block_m.link(output);
 
     ruststone::add_weighted_edge(dust_r, input_r, 1);
     ruststone::add_weighted_edge(dust_m, and_l, 1);
@@ -311,17 +311,17 @@ fn and_gate_with_both_arms_off() {
     let block_m = arena.make_block("block_m");
     let block_r = arena.make_block("block_r");
 
-    ruststone::link(dust_l, block_l);
-    ruststone::link(block_l, and_l);
+    dust_l.link(block_l);
+    block_l.link(and_l);
 
-    ruststone::link(dust_r, block_r);
-    ruststone::link(block_r, and_r);
+    dust_r.link(block_r);
+    block_r.link(and_r);
 
-    ruststone::link(and_l, dust_m);
-    ruststone::link(and_r, dust_m);
-    ruststone::link(dust_m, block_m);
+    and_l.link(dust_m);
+    and_r.link(dust_m);
+    dust_m.link(block_m);
 
-    ruststone::link(block_m, output);
+    block_m.link(output);
 
     ruststone::add_weighted_edge(dust_m, and_l, 1);
     ruststone::add_weighted_edge(dust_m, and_r, 1);
@@ -348,14 +348,14 @@ fn xor_gate() {
     let block_after_inversion_l = arena.make_block("block_after_inversion_l");
     let torch_after_dust_inversion_l = arena.make_torch("torch_after_dust_inversion_l");
 
-    ruststone::link(input_l, input_dust_l);
-    ruststone::link(input_dust_l, dust_block_l);
-    ruststone::link(dust_block_l, torch_on_top_block_l);
-    ruststone::link(dust_block_l, torch_in_front_block_l);
-    ruststone::link(torch_in_front_block_l, dust_after_inversion_l);
-    ruststone::link(dust_after_inversion_l, dust_after_inversion_l2);
-    ruststone::link(dust_after_inversion_l2, block_after_inversion_l);
-    ruststone::link(block_after_inversion_l, torch_after_dust_inversion_l);
+    input_l.link(input_dust_l);
+    input_dust_l.link(dust_block_l);
+    dust_block_l.link(torch_on_top_block_l);
+    dust_block_l.link(torch_in_front_block_l);
+    torch_in_front_block_l.link(dust_after_inversion_l);
+    dust_after_inversion_l.link(dust_after_inversion_l2);
+    dust_after_inversion_l2.link(block_after_inversion_l);
+    block_after_inversion_l.link(torch_after_dust_inversion_l);
 
     ruststone::add_weighted_edge(input_dust_l, input_l, 1);
     ruststone::add_weighted_edge(dust_after_inversion_l, torch_in_front_block_l, 1);
@@ -371,14 +371,14 @@ fn xor_gate() {
     let block_after_inversion_r = arena.make_block("block_after_inversion_r");
     let torch_after_dust_inversion_r = arena.make_torch("torch_after_dust_inversion_r");
 
-    ruststone::link(input_r, input_dust_r);
-    ruststone::link(input_dust_r, dust_block_r);
-    ruststone::link(dust_block_r, torch_on_top_block_r);
-    ruststone::link(dust_block_r, torch_in_front_block_r);
-    ruststone::link(torch_in_front_block_r, dust_after_inversion_r);
-    ruststone::link(dust_after_inversion_r, dust_after_inversion_r2);
-    ruststone::link(dust_after_inversion_r2, block_after_inversion_r);
-    ruststone::link(block_after_inversion_r, torch_after_dust_inversion_r);
+    input_r.link(input_dust_r);
+    input_dust_r.link(dust_block_r);
+    dust_block_r.link(torch_on_top_block_r);
+    dust_block_r.link(torch_in_front_block_r);
+    torch_in_front_block_r.link(dust_after_inversion_r);
+    dust_after_inversion_r.link(dust_after_inversion_r2);
+    dust_after_inversion_r2.link(block_after_inversion_r);
+    block_after_inversion_r.link(torch_after_dust_inversion_r);
 
     ruststone::add_weighted_edge(input_dust_r, input_r, 1);
     ruststone::add_weighted_edge(dust_after_inversion_r, torch_in_front_block_r, 1);
@@ -389,19 +389,19 @@ fn xor_gate() {
     let and_block = arena.make_block("and_block");
     let inversion_of_and = arena.make_torch("inversion_of_and");
 
-    ruststone::link(torch_on_top_block_l, and_dust_1);
-    ruststone::link(torch_on_top_block_r, and_dust_1);
-    ruststone::link(and_dust_1, and_dust_2);
-    ruststone::link(and_dust_2, and_block);
-    ruststone::link(and_block, inversion_of_and);
+    torch_on_top_block_l.link(and_dust_1);
+    torch_on_top_block_r.link(and_dust_1);
+    and_dust_1.link(and_dust_2);
+    and_dust_2.link(and_block);
+    and_block.link(inversion_of_and);
 
     ruststone::add_weighted_edge(and_dust_1, torch_in_front_block_l, 1);
     ruststone::add_weighted_edge(and_dust_1, torch_in_front_block_r, 1);
     ruststone::add_weighted_edge(and_dust_2, torch_in_front_block_l, 2);
     ruststone::add_weighted_edge(and_dust_2, torch_in_front_block_r, 2);
 
-    ruststone::link(inversion_of_and, dust_after_inversion_l);
-    ruststone::link(inversion_of_and, dust_after_inversion_r);
+    inversion_of_and.link(dust_after_inversion_l);
+    inversion_of_and.link(dust_after_inversion_r);
 
     ruststone::add_weighted_edge(dust_after_inversion_l, inversion_of_and, 1);
     ruststone::add_weighted_edge(dust_after_inversion_l2, inversion_of_and, 2);
@@ -410,8 +410,8 @@ fn xor_gate() {
 
     let output = arena.make_dust("output");
 
-    ruststone::link(torch_after_dust_inversion_l, output);
-    ruststone::link(torch_after_dust_inversion_r, output);
+    torch_after_dust_inversion_l.link(output);
+    torch_after_dust_inversion_r.link(output);
 
     ruststone::add_weighted_edge(output, torch_after_dust_inversion_l, 1);
     ruststone::add_weighted_edge(output, torch_after_dust_inversion_r, 1);
@@ -444,13 +444,13 @@ fn xor_gate_with_left_off() {
     let block_after_inversion_l = arena.make_block("block_after_inversion_l");
     let torch_after_dust_inversion_l = arena.make_torch("torch_after_dust_inversion_l");
 
-    ruststone::link(input_dust_l, dust_block_l);
-    ruststone::link(dust_block_l, torch_on_top_block_l);
-    ruststone::link(dust_block_l, torch_in_front_block_l);
-    ruststone::link(torch_in_front_block_l, dust_after_inversion_l);
-    ruststone::link(dust_after_inversion_l, dust_after_inversion_l2);
-    ruststone::link(dust_after_inversion_l2, block_after_inversion_l);
-    ruststone::link(block_after_inversion_l, torch_after_dust_inversion_l);
+    input_dust_l.link(dust_block_l);
+    dust_block_l.link(torch_on_top_block_l);
+    dust_block_l.link(torch_in_front_block_l);
+    torch_in_front_block_l.link(dust_after_inversion_l);
+    dust_after_inversion_l.link(dust_after_inversion_l2);
+    dust_after_inversion_l2.link(block_after_inversion_l);
+    block_after_inversion_l.link(torch_after_dust_inversion_l);
 
     ruststone::add_weighted_edge(dust_after_inversion_l, torch_in_front_block_l, 1);
     ruststone::add_weighted_edge(dust_after_inversion_l2, torch_in_front_block_l, 2);
@@ -465,14 +465,14 @@ fn xor_gate_with_left_off() {
     let block_after_inversion_r = arena.make_block("block_after_inversion_r");
     let torch_after_dust_inversion_r = arena.make_torch("torch_after_dust_inversion_r");
 
-    ruststone::link(input_r, input_dust_r);
-    ruststone::link(input_dust_r, dust_block_r);
-    ruststone::link(dust_block_r, torch_on_top_block_r);
-    ruststone::link(dust_block_r, torch_in_front_block_r);
-    ruststone::link(torch_in_front_block_r, dust_after_inversion_r);
-    ruststone::link(dust_after_inversion_r, dust_after_inversion_r2);
-    ruststone::link(dust_after_inversion_r2, block_after_inversion_r);
-    ruststone::link(block_after_inversion_r, torch_after_dust_inversion_r);
+    input_r.link(input_dust_r);
+    input_dust_r.link(dust_block_r);
+    dust_block_r.link(torch_on_top_block_r);
+    dust_block_r.link(torch_in_front_block_r);
+    torch_in_front_block_r.link(dust_after_inversion_r);
+    dust_after_inversion_r.link(dust_after_inversion_r2);
+    dust_after_inversion_r2.link(block_after_inversion_r);
+    block_after_inversion_r.link(torch_after_dust_inversion_r);
 
     ruststone::add_weighted_edge(input_dust_r, input_r, 1);
     ruststone::add_weighted_edge(dust_after_inversion_r, torch_in_front_block_r, 1);
@@ -483,19 +483,19 @@ fn xor_gate_with_left_off() {
     let and_block = arena.make_block("and_block");
     let inversion_of_and = arena.make_torch("inversion_of_and");
 
-    ruststone::link(torch_on_top_block_l, and_dust_1);
-    ruststone::link(torch_on_top_block_r, and_dust_1);
-    ruststone::link(and_dust_1, and_dust_2);
-    ruststone::link(and_dust_2, and_block);
-    ruststone::link(and_block, inversion_of_and);
+    torch_on_top_block_l.link(and_dust_1);
+    torch_on_top_block_r.link(and_dust_1);
+    and_dust_1.link(and_dust_2);
+    and_dust_2.link(and_block);
+    and_block.link(inversion_of_and);
 
     ruststone::add_weighted_edge(and_dust_1, torch_in_front_block_l, 1);
     ruststone::add_weighted_edge(and_dust_1, torch_in_front_block_r, 1);
     ruststone::add_weighted_edge(and_dust_2, torch_in_front_block_l, 2);
     ruststone::add_weighted_edge(and_dust_2, torch_in_front_block_r, 2);
 
-    ruststone::link(inversion_of_and, dust_after_inversion_l);
-    ruststone::link(inversion_of_and, dust_after_inversion_r);
+    inversion_of_and.link(dust_after_inversion_l);
+    inversion_of_and.link(dust_after_inversion_r);
 
     ruststone::add_weighted_edge(dust_after_inversion_l, inversion_of_and, 1);
     ruststone::add_weighted_edge(dust_after_inversion_l2, inversion_of_and, 2);
@@ -504,8 +504,8 @@ fn xor_gate_with_left_off() {
 
     let output = arena.make_dust("output");
 
-    ruststone::link(torch_after_dust_inversion_l, output);
-    ruststone::link(torch_after_dust_inversion_r, output);
+    torch_after_dust_inversion_l.link(output);
+    torch_after_dust_inversion_r.link(output);
 
     ruststone::add_weighted_edge(output, torch_after_dust_inversion_l, 1);
     ruststone::add_weighted_edge(output, torch_after_dust_inversion_r, 1);
@@ -538,14 +538,14 @@ fn xor_gate_with_right_off() {
     let block_after_inversion_l = arena.make_block("block_after_inversion_l");
     let torch_after_dust_inversion_l = arena.make_torch("torch_after_dust_inversion_l");
 
-    ruststone::link(input_l, input_dust_l);
-    ruststone::link(input_dust_l, dust_block_l);
-    ruststone::link(dust_block_l, torch_on_top_block_l);
-    ruststone::link(dust_block_l, torch_in_front_block_l);
-    ruststone::link(torch_in_front_block_l, dust_after_inversion_l);
-    ruststone::link(dust_after_inversion_l, dust_after_inversion_l2);
-    ruststone::link(dust_after_inversion_l2, block_after_inversion_l);
-    ruststone::link(block_after_inversion_l, torch_after_dust_inversion_l);
+    input_l.link(input_dust_l);
+    input_dust_l.link(dust_block_l);
+    dust_block_l.link(torch_on_top_block_l);
+    dust_block_l.link(torch_in_front_block_l);
+    torch_in_front_block_l.link(dust_after_inversion_l);
+    dust_after_inversion_l.link(dust_after_inversion_l2);
+    dust_after_inversion_l2.link(block_after_inversion_l);
+    block_after_inversion_l.link(torch_after_dust_inversion_l);
 
     ruststone::add_weighted_edge(input_dust_l, input_l, 1);
     ruststone::add_weighted_edge(dust_after_inversion_l, torch_in_front_block_l, 1);
@@ -560,13 +560,13 @@ fn xor_gate_with_right_off() {
     let block_after_inversion_r = arena.make_block("block_after_inversion_r");
     let torch_after_dust_inversion_r = arena.make_torch("torch_after_dust_inversion_r");
 
-    ruststone::link(input_dust_r, dust_block_r);
-    ruststone::link(dust_block_r, torch_on_top_block_r);
-    ruststone::link(dust_block_r, torch_in_front_block_r);
-    ruststone::link(torch_in_front_block_r, dust_after_inversion_r);
-    ruststone::link(dust_after_inversion_r, dust_after_inversion_r2);
-    ruststone::link(dust_after_inversion_r2, block_after_inversion_r);
-    ruststone::link(block_after_inversion_r, torch_after_dust_inversion_r);
+    input_dust_r.link(dust_block_r);
+    dust_block_r.link(torch_on_top_block_r);
+    dust_block_r.link(torch_in_front_block_r);
+    torch_in_front_block_r.link(dust_after_inversion_r);
+    dust_after_inversion_r.link(dust_after_inversion_r2);
+    dust_after_inversion_r2.link(block_after_inversion_r);
+    block_after_inversion_r.link(torch_after_dust_inversion_r);
 
     ruststone::add_weighted_edge(dust_after_inversion_r, torch_in_front_block_r, 1);
     ruststone::add_weighted_edge(dust_after_inversion_r2, torch_in_front_block_r, 2);
@@ -576,19 +576,19 @@ fn xor_gate_with_right_off() {
     let and_block = arena.make_block("and_block");
     let inversion_of_and = arena.make_torch("inversion_of_and");
 
-    ruststone::link(torch_on_top_block_l, and_dust_1);
-    ruststone::link(torch_on_top_block_r, and_dust_1);
-    ruststone::link(and_dust_1, and_dust_2);
-    ruststone::link(and_dust_2, and_block);
-    ruststone::link(and_block, inversion_of_and);
+    torch_on_top_block_l.link(and_dust_1);
+    torch_on_top_block_r.link(and_dust_1);
+    and_dust_1.link(and_dust_2);
+    and_dust_2.link(and_block);
+    and_block.link(inversion_of_and);
 
     ruststone::add_weighted_edge(and_dust_1, torch_in_front_block_l, 1);
     ruststone::add_weighted_edge(and_dust_1, torch_in_front_block_r, 1);
     ruststone::add_weighted_edge(and_dust_2, torch_in_front_block_l, 2);
     ruststone::add_weighted_edge(and_dust_2, torch_in_front_block_r, 2);
 
-    ruststone::link(inversion_of_and, dust_after_inversion_l);
-    ruststone::link(inversion_of_and, dust_after_inversion_r);
+    inversion_of_and.link(dust_after_inversion_l);
+    inversion_of_and.link(dust_after_inversion_r);
 
     ruststone::add_weighted_edge(dust_after_inversion_l, inversion_of_and, 1);
     ruststone::add_weighted_edge(dust_after_inversion_l2, inversion_of_and, 2);
@@ -597,8 +597,8 @@ fn xor_gate_with_right_off() {
 
     let output = arena.make_dust("output");
 
-    ruststone::link(torch_after_dust_inversion_l, output);
-    ruststone::link(torch_after_dust_inversion_r, output);
+    torch_after_dust_inversion_l.link(output);
+    torch_after_dust_inversion_r.link(output);
 
     ruststone::add_weighted_edge(output, torch_after_dust_inversion_l, 1);
     ruststone::add_weighted_edge(output, torch_after_dust_inversion_r, 1);
@@ -630,13 +630,13 @@ fn xor_gate_with_both_off() {
     let block_after_inversion_l = arena.make_block("block_after_inversion_l");
     let torch_after_dust_inversion_l = arena.make_torch("torch_after_dust_inversion_l");
 
-    ruststone::link(input_dust_l, dust_block_l);
-    ruststone::link(dust_block_l, torch_on_top_block_l);
-    ruststone::link(dust_block_l, torch_in_front_block_l);
-    ruststone::link(torch_in_front_block_l, dust_after_inversion_l);
-    ruststone::link(dust_after_inversion_l, dust_after_inversion_l2);
-    ruststone::link(dust_after_inversion_l2, block_after_inversion_l);
-    ruststone::link(block_after_inversion_l, torch_after_dust_inversion_l);
+    input_dust_l.link(dust_block_l);
+    dust_block_l.link(torch_on_top_block_l);
+    dust_block_l.link(torch_in_front_block_l);
+    torch_in_front_block_l.link(dust_after_inversion_l);
+    dust_after_inversion_l.link(dust_after_inversion_l2);
+    dust_after_inversion_l2.link(block_after_inversion_l);
+    block_after_inversion_l.link(torch_after_dust_inversion_l);
 
     ruststone::add_weighted_edge(dust_after_inversion_l, torch_in_front_block_l, 1);
     ruststone::add_weighted_edge(dust_after_inversion_l2, torch_in_front_block_l, 2);
@@ -650,13 +650,13 @@ fn xor_gate_with_both_off() {
     let block_after_inversion_r = arena.make_block("block_after_inversion_r");
     let torch_after_dust_inversion_r = arena.make_torch("torch_after_dust_inversion_r");
 
-    ruststone::link(input_dust_r, dust_block_r);
-    ruststone::link(dust_block_r, torch_on_top_block_r);
-    ruststone::link(dust_block_r, torch_in_front_block_r);
-    ruststone::link(torch_in_front_block_r, dust_after_inversion_r);
-    ruststone::link(dust_after_inversion_r, dust_after_inversion_r2);
-    ruststone::link(dust_after_inversion_r2, block_after_inversion_r);
-    ruststone::link(block_after_inversion_r, torch_after_dust_inversion_r);
+    input_dust_r.link(dust_block_r);
+    dust_block_r.link(torch_on_top_block_r);
+    dust_block_r.link(torch_in_front_block_r);
+    torch_in_front_block_r.link(dust_after_inversion_r);
+    dust_after_inversion_r.link(dust_after_inversion_r2);
+    dust_after_inversion_r2.link(block_after_inversion_r);
+    block_after_inversion_r.link(torch_after_dust_inversion_r);
 
     ruststone::add_weighted_edge(dust_after_inversion_r, torch_in_front_block_r, 1);
     ruststone::add_weighted_edge(dust_after_inversion_r2, torch_in_front_block_r, 2);
@@ -666,19 +666,19 @@ fn xor_gate_with_both_off() {
     let and_block = arena.make_block("and_block");
     let inversion_of_and = arena.make_torch("inversion_of_and");
 
-    ruststone::link(torch_on_top_block_l, and_dust_1);
-    ruststone::link(torch_on_top_block_r, and_dust_1);
-    ruststone::link(and_dust_1, and_dust_2);
-    ruststone::link(and_dust_2, and_block);
-    ruststone::link(and_block, inversion_of_and);
+    torch_on_top_block_l.link(and_dust_1);
+    torch_on_top_block_r.link(and_dust_1);
+    and_dust_1.link(and_dust_2);
+    and_dust_2.link(and_block);
+    and_block.link(inversion_of_and);
 
     ruststone::add_weighted_edge(and_dust_1, torch_in_front_block_l, 1);
     ruststone::add_weighted_edge(and_dust_1, torch_in_front_block_r, 1);
     ruststone::add_weighted_edge(and_dust_2, torch_in_front_block_l, 2);
     ruststone::add_weighted_edge(and_dust_2, torch_in_front_block_r, 2);
 
-    ruststone::link(inversion_of_and, dust_after_inversion_l);
-    ruststone::link(inversion_of_and, dust_after_inversion_r);
+    inversion_of_and.link(dust_after_inversion_l);
+    inversion_of_and.link(dust_after_inversion_r);
 
     ruststone::add_weighted_edge(dust_after_inversion_l, inversion_of_and, 1);
     ruststone::add_weighted_edge(dust_after_inversion_l2, inversion_of_and, 2);
@@ -687,8 +687,8 @@ fn xor_gate_with_both_off() {
 
     let output = arena.make_dust("output");
 
-    ruststone::link(torch_after_dust_inversion_l, output);
-    ruststone::link(torch_after_dust_inversion_r, output);
+    torch_after_dust_inversion_l.link(output);
+    torch_after_dust_inversion_r.link(output);
 
     ruststone::add_weighted_edge(output, torch_after_dust_inversion_l, 1);
     ruststone::add_weighted_edge(output, torch_after_dust_inversion_r, 1);
@@ -720,18 +720,18 @@ fn memory_cell() {
     let dust_b1 = arena.make_dust("dust_b1");
     let dust_b2 = arena.make_dust("dust_b2");
 
-    ruststone::link(block_a, torch_a);
-    ruststone::link(torch_a, dust_a1);
-    ruststone::link(dust_a1, dust_a2);
-    ruststone::link(dust_a2, block_b);
+    block_a.link(torch_a);
+    torch_a.link(dust_a1);
+    dust_a1.link(dust_a2);
+    dust_a2.link(block_b);
 
     ruststone::add_weighted_edge(dust_a1, torch_a, 1);
     ruststone::add_weighted_edge(dust_a2, torch_a, 2);
 
-    ruststone::link(block_b, torch_b);
-    ruststone::link(torch_b, dust_b1);
-    ruststone::link(dust_b1, dust_b2);
-    ruststone::link(dust_b2, block_a);
+    block_b.link(torch_b);
+    torch_b.link(dust_b1);
+    dust_b1.link(dust_b2);
+    dust_b2.link(block_a);
 
     ruststone::add_weighted_edge(dust_b1, torch_b, 1);
     ruststone::add_weighted_edge(dust_b2, torch_b, 2);
@@ -757,18 +757,18 @@ fn memory_cell_alt() {
     let dust_b1 = arena.make_dust("dust_b1");
     let dust_b2 = arena.make_dust("dust_b2");
 
-    ruststone::link(block_a, torch_a);
-    ruststone::link(torch_a, dust_a1);
-    ruststone::link(dust_a1, dust_a2);
-    ruststone::link(dust_a2, block_b);
+    block_a.link(torch_a);
+    torch_a.link(dust_a1);
+    dust_a1.link(dust_a2);
+    dust_a2.link(block_b);
 
     ruststone::add_weighted_edge(dust_a1, torch_a, 1);
     ruststone::add_weighted_edge(dust_a2, torch_a, 2);
 
-    ruststone::link(block_b, torch_b);
-    ruststone::link(torch_b, dust_b1);
-    ruststone::link(dust_b1, dust_b2);
-    ruststone::link(dust_b2, block_a);
+    block_b.link(torch_b);
+    torch_b.link(dust_b1);
+    dust_b1.link(dust_b2);
+    dust_b2.link(block_a);
 
     ruststone::add_weighted_edge(dust_b1, torch_b, 1);
     ruststone::add_weighted_edge(dust_b2, torch_b, 2);
@@ -789,9 +789,9 @@ fn torch_and_dust_and_block_and_repeater() {
     let block = arena.make_block("block");
     let repeater = arena.make_repeater("repeater", 1);
 
-    ruststone::link(torch, dust);
-    ruststone::link(dust, block);
-    ruststone::link(block, repeater);
+    torch.link(dust);
+    dust.link(block);
+    block.link(repeater);
 
     ruststone::add_weighted_edge(dust, torch, 1);
 
@@ -816,11 +816,11 @@ fn torch_and_dust_and_block_and_repeater_and_block_and_dust() {
     let block2 = arena.make_block("block2");
     let dust2 = arena.make_dust("dust2");
 
-    ruststone::link(torch, dust1);
-    ruststone::link(dust1, block1);
-    ruststone::link(block1, repeater);
-    ruststone::link(repeater, block2);
-    ruststone::link(block2, dust2);
+    torch.link(dust1);
+    dust1.link(block1);
+    block1.link(repeater);
+    repeater.link(block2);
+    block2.link(dust2);
 
     ruststone::add_weighted_edge(dust1, torch, 1);
     ruststone::add_weighted_edge(dust2, block2, 1);
@@ -855,15 +855,15 @@ fn repeater_locked_by_its_neighbor() {
     // ^<+
     // +++
     //  *
-    ruststone::link(torch, dust1);
-    ruststone::link(dust1, dust2);
-    ruststone::link(dust1, dust3);
-    ruststone::link(dust3, dust4);
+    torch.link(dust1);
+    dust1.link(dust2);
+    dust1.link(dust3);
+    dust3.link(dust4);
 
-    ruststone::link(dust2, throughput);
-    ruststone::link(dust4, locker);
+    dust2.link(throughput);
+    dust4.link(locker);
 
-    ruststone::link(throughput, output);
+    throughput.link(output);
 
     ruststone::add_weighted_edge(dust1, torch, 1);
     ruststone::add_weighted_edge(dust2, torch, 2);
@@ -904,15 +904,15 @@ fn repeater_locked_by_its_slower_neighbor() {
     // ^<+
     // +++
     //  *
-    ruststone::link(torch, dust1);
-    ruststone::link(dust1, dust2);
-    ruststone::link(dust1, dust3);
-    ruststone::link(dust3, dust4);
+    torch.link(dust1);
+    dust1.link(dust2);
+    dust1.link(dust3);
+    dust3.link(dust4);
 
-    ruststone::link(dust2, throughput);
-    ruststone::link(dust4, locker);
+    dust2.link(throughput);
+    dust4.link(locker);
 
-    ruststone::link(throughput, output);
+    throughput.link(output);
 
     ruststone::add_weighted_edge(dust1, torch, 1);
     ruststone::add_weighted_edge(dust2, torch, 2);
@@ -953,15 +953,15 @@ fn repeater_locked_simultaneously_by_its_neighbors() {
     // ^<+
     // +++
     //  *
-    ruststone::link(torch, dust1);
-    ruststone::link(dust1, dust2);
-    ruststone::link(dust1, dust3);
-    ruststone::link(dust3, dust4);
+    torch.link(dust1);
+    dust1.link(dust2);
+    dust1.link(dust3);
+    dust3.link(dust4);
 
-    ruststone::link(dust2, throughput);
-    ruststone::link(dust4, locker);
+    dust2.link(throughput);
+    dust4.link(locker);
 
-    ruststone::link(throughput, output);
+    throughput.link(output);
 
     ruststone::add_weighted_edge(dust1, torch, 1);
     ruststone::add_weighted_edge(dust2, torch, 2);

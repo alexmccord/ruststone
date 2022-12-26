@@ -245,6 +245,50 @@ impl<'r> Redstone<'r> {
     fn is_undirected(&self) -> bool {
         !self.is_directed()
     }
+
+    pub fn link(&'r self, target: &'r Redstone<'r>) {
+        match self.node() {
+            RedstoneNode::Torch(torch) => {
+                assert!(torch.outgoing.borrow().len() <= 5);
+                torch.outgoing.borrow_mut().push(target);
+            }
+            RedstoneNode::Dust(dust) => {
+                assert!(dust.neighbors.borrow().len() <= 6);
+                dust.neighbors.borrow_mut().push(target);
+            }
+            RedstoneNode::Block(block) => {
+                assert!(block.outgoing.borrow().len() <= 6);
+                block.outgoing.borrow_mut().push(target);
+            }
+            RedstoneNode::Repeater(repeater) => {
+                assert!(repeater.outgoing.get().is_none());
+                repeater.outgoing.set(Some(target));
+            }
+        }
+
+        match target.node() {
+            RedstoneNode::Torch(torch) => {
+                assert!(torch.incoming.get().is_none());
+                torch.incoming.set(Some(self));
+            }
+            RedstoneNode::Dust(dust) => {
+                if self.is_undirected() {
+                    assert!(dust.neighbors.borrow().len() <= 6);
+                    dust.neighbors.borrow_mut().push(self);
+                }
+            }
+            RedstoneNode::Block(block) => {
+                assert!(block.incoming.borrow().len() <= 6);
+                block.incoming.borrow_mut().push(self);
+            }
+            RedstoneNode::Repeater(repeater) => {
+                if self.is_undirected() {
+                    assert!(repeater.incoming.get().is_none());
+                    repeater.incoming.set(Some(self));
+                }
+            }
+        }
+    }
 }
 
 impl<'r> Display for Redstone<'r> {
@@ -269,50 +313,6 @@ impl<'r> ConstraintDispatch<'r> for Redstone<'r> {
             RedstoneNode::Dust(dust) => dust.dispatch_frame_offset(),
             RedstoneNode::Block(block) => block.dispatch_frame_offset(),
             RedstoneNode::Repeater(repeater) => repeater.dispatch_frame_offset(),
-        }
-    }
-}
-
-pub fn link<'r>(here: &'r Redstone<'r>, there: &'r Redstone<'r>) {
-    match here.node() {
-        RedstoneNode::Torch(torch) => {
-            assert!(torch.outgoing.borrow().len() <= 5);
-            torch.outgoing.borrow_mut().push(there);
-        }
-        RedstoneNode::Dust(dust) => {
-            assert!(dust.neighbors.borrow().len() <= 6);
-            dust.neighbors.borrow_mut().push(there);
-        }
-        RedstoneNode::Block(block) => {
-            assert!(block.outgoing.borrow().len() <= 6);
-            block.outgoing.borrow_mut().push(there);
-        }
-        RedstoneNode::Repeater(repeater) => {
-            assert!(repeater.outgoing.get().is_none());
-            repeater.outgoing.set(Some(there));
-        }
-    }
-
-    match there.node() {
-        RedstoneNode::Torch(torch) => {
-            assert!(torch.incoming.get().is_none());
-            torch.incoming.set(Some(here));
-        }
-        RedstoneNode::Dust(dust) => {
-            if here.is_undirected() {
-                assert!(dust.neighbors.borrow().len() <= 6);
-                dust.neighbors.borrow_mut().push(here);
-            }
-        }
-        RedstoneNode::Block(block) => {
-            assert!(block.incoming.borrow().len() <= 6);
-            block.incoming.borrow_mut().push(here);
-        }
-        RedstoneNode::Repeater(repeater) => {
-            if here.is_undirected() {
-                assert!(repeater.incoming.get().is_none());
-                repeater.incoming.set(Some(here));
-            }
         }
     }
 }
