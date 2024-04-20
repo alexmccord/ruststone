@@ -1,24 +1,16 @@
 use std::{
     cell::RefCell,
-    collections::{HashSet, VecDeque},
+    collections::HashSet,
     ops::{Index, IndexMut},
 };
 
 use fnv::FnvHashMap;
 
 use crate::{
-    add_weighted_edge,
     vec3::Vec3,
     voxels::{DustVoxel, Facing, TorchVoxel, Voxel},
     ConstraintGraph, Redstone, RedstoneArena,
 };
-
-// Not the greatest name. Should rename first chance a better name comes up.
-struct VoxelContext<'r> {
-    vec3: Vec3,
-    voxel: &'r Voxel,
-    redstone: Option<&'r Redstone<'r>>,
-}
 
 struct Neighbors<T> {
     up: T,
@@ -40,26 +32,15 @@ impl<T> Neighbors<T> {
             back,
         }
     }
-
-    fn map<F: FnMut(&T) -> U, U>(&self, mut f: F) -> Neighbors<U> {
-        Neighbors::new(
-            f(&self.up),
-            f(&self.down),
-            f(&self.left),
-            f(&self.right),
-            f(&self.front),
-            f(&self.back),
-        )
-    }
 }
 
-struct NeighborsIter<'n, T> {
-    neighbors: &'n Neighbors<T>,
+struct NeighborsIter<'a, T> {
+    neighbors: &'a Neighbors<T>,
     idx: u8,
 }
 
-impl<'n, T> Iterator for NeighborsIter<'n, T> {
-    type Item = &'n T;
+impl<'a, T> Iterator for NeighborsIter<'a, T> {
+    type Item = &'a T;
 
     fn next(&mut self) -> Option<Self::Item> {
         let result = match self.idx {
@@ -76,9 +57,9 @@ impl<'n, T> Iterator for NeighborsIter<'n, T> {
     }
 }
 
-impl<'n, T> IntoIterator for &'n Neighbors<T> {
-    type Item = &'n T;
-    type IntoIter = NeighborsIter<'n, T>;
+impl<'a, T> IntoIterator for &'a Neighbors<T> {
+    type Item = &'a T;
+    type IntoIter = NeighborsIter<'a, T>;
 
     fn into_iter(self) -> Self::IntoIter {
         NeighborsIter {
@@ -146,7 +127,7 @@ impl<'r> World<'r> {
         redstone
     }
 
-    fn vec3_neighbors(vec3: Vec3) -> Neighbors<Vec3> {
+    fn neighbors(vec3: Vec3) -> Neighbors<Vec3> {
         Neighbors::new(
             vec3.up(),
             vec3.down(),
@@ -157,14 +138,6 @@ impl<'r> World<'r> {
         )
     }
 
-    fn neighbors(&'r self, vec3: Vec3) -> Neighbors<VoxelContext> {
-        World::vec3_neighbors(vec3).map(|v| VoxelContext {
-            vec3: *v,
-            voxel: &self[*v],
-            redstone: self.get(*v),
-        })
-    }
-
     fn get_constraint_graphs(&'r self) -> Vec<ConstraintGraph<'r>> {
         for (vec3, voxel) in &self.voxels {
             match voxel {
@@ -172,40 +145,6 @@ impl<'r> World<'r> {
                 Voxel::Stone(_) => (), // I think this is no-op in general.
                 Voxel::Torch(torch) => self.visit_torch_voxel(*vec3, torch),
                 Voxel::Dust(dust) => self.visit_dust_voxel(*vec3, dust),
-            }
-        }
-
-        for (vec3, voxel) in &self.voxels {
-            if !voxel.is_dust() {
-                continue;
-            }
-
-            let dust = self.get(*vec3).unwrap();
-            let mut queue = VecDeque::new();
-            queue.push_front((0, *vec3));
-
-            let mut anticycle = HashSet::new();
-
-            while let Some(current) = queue.pop_front() {
-                if anticycle.contains(&current.1) {
-                    continue;
-                }
-
-                anticycle.insert(current.1);
-
-                let voxel = &self[current.1];
-                let source = self.get(current.1);
-
-                match voxel {
-                    Voxel::Air(_) => continue,
-                    Voxel::Stone(_) => add_weighted_edge(dust, source.unwrap(), current.0),
-                    Voxel::Torch(_) => add_weighted_edge(dust, source.unwrap(), current.0),
-                    Voxel::Dust(_) => {
-                        for neighbor in World::vec3_neighbors(current.1).into_iter() {
-                            queue.push_back((current.0 + 1, *neighbor));
-                        }
-                    }
-                }
             }
         }
 
@@ -220,7 +159,7 @@ impl<'r> World<'r> {
                 continue;
             }
 
-            for r in redstone.into_iter() {
+            for r in redstone {
                 seen.insert(r as *const Redstone);
             }
 
@@ -230,73 +169,62 @@ impl<'r> World<'r> {
         cgs
     }
 
-    fn is_linkable_from_torch(&self, torch: (Vec3, &TorchVoxel), other: (Vec3, &Voxel)) -> bool {
-        let placed_on_vec3 = match &torch.1.facing {
-            Some(Facing::North) => torch.0.north(),
-            Some(Facing::East) => torch.0.east(),
-            Some(Facing::West) => torch.0.west(),
-            Some(Facing::South) => torch.0.south(),
-            None => torch.0.down(),
-        };
-
-        // The torch is never linked to the voxel for which it is placed upon.
-        if other.0 == placed_on_vec3 {
-            return false;
-        }
-
-        match (&other.1, (torch.0 - other.0)) {
-            (Voxel::Air(_), _) => false,
-            (Voxel::Stone(_), Vec3(_, 1, _)) => true,
-            (Voxel::Stone(_), Vec3(_, _, _)) => false,
-            (Voxel::Torch(_), Vec3(_, 0, _)) => false,
-            (Voxel::Dust(_), _) => true,
-            (_, _) => false,
-        }
-    }
-
     fn visit_torch_voxel(&'r self, vec3: Vec3, torch: &TorchVoxel) {
         let redstone = self.get(vec3).unwrap();
 
-        for neighbor in self
-            .neighbors(vec3)
-            .into_iter()
-            .filter(|n| self.is_linkable_from_torch((vec3, torch), (n.vec3, n.voxel)))
-        {
-            if let Some(target) = neighbor.redstone {
-                redstone.link(target);
+        let placed_on_vec3 = match &torch.facing {
+            Some(Facing::North) => vec3.south(),
+            Some(Facing::East) => vec3.west(),
+            Some(Facing::West) => vec3.east(),
+            Some(Facing::South) => vec3.north(),
+            None => vec3.down(),
+        };
+
+        for neighbor in &World::neighbors(vec3) {
+            // The torch is never linked to the voxel for which it is placed upon.
+            if *neighbor == placed_on_vec3 {
+                continue;
+            }
+
+            let ok = match (&self[*neighbor], (*neighbor - vec3)) {
+                (Voxel::Stone(_), Vec3(0, 1, 0)) => true,
+                (Voxel::Dust(_), Vec3(_, 0 | -1, _)) => true,
+                (_, _) => false,
+            };
+
+            if ok {
+                redstone.link(self.get(*neighbor).unwrap());
             }
         }
+
+        assert!(self[placed_on_vec3].is_stone());
+        self.get(placed_on_vec3).unwrap().link(redstone);
     }
 
     fn is_linkable_from_dust(&self, dust: (Vec3, &DustVoxel), other: (Vec3, &Voxel)) -> bool {
-        match (dust.0 - other.0).abs() {
-            Vec3(0, 0, 0) => panic!("Same voxel?"),
-            Vec3(0, 0, 1) if other.1.is_dust() => true,
-            Vec3(0, 1, 0) if other.1.is_dust() => true,
-            Vec3(1, 0, 0) if other.1.is_dust() => true,
-            _ => false,
+        match ((dust.0 - other.0).abs(), other.1) {
+            (Vec3(0, 0, 0), _) => panic!("Same voxel?"),
+            (Vec3(0, 0, 1), Voxel::Dust(..) | Voxel::Stone(..)) => true,
+            (Vec3(1, 0, 0), Voxel::Dust(..) | Voxel::Stone(..)) => true,
+            (_, _) => false,
         }
     }
 
     fn visit_dust_voxel(&'r self, vec3: Vec3, dust: &DustVoxel) {
         let redstone = self.get(vec3).unwrap();
-        let neighbors = self.neighbors(vec3);
+        let neighbors = World::neighbors(vec3);
 
         // A dust must be placed on a stone at all times.
-        assert!(neighbors.down.voxel.is_stone());
-        redstone.link(neighbors.down.redstone.unwrap());
+        assert!(self[neighbors.down].is_stone());
+        // redstone.link(self.get(neighbors.down).unwrap());
 
-        let (viable, nonviable): (Vec<&VoxelContext>, Vec<&VoxelContext>) = neighbors
-            .into_iter()
-            .partition(|n| self.is_linkable_from_dust((vec3, dust), (n.vec3, n.voxel)));
+        for neighbor in &neighbors {
+            if self.is_linkable_from_dust((vec3, dust), (*neighbor, &self[*neighbor])) {
+                redstone.link(self.get(*neighbor).unwrap());
+            }
 
-        for ctx in viable {
-            redstone.link(ctx.redstone.unwrap());
-        }
-
-        if neighbors.up.voxel.is_air() {
-            for ctx in nonviable.iter().filter(|ctx| ctx.voxel.is_dust()) {
-                redstone.link(ctx.redstone.unwrap());
+            if self[neighbors.up].is_air() && self[neighbor.up()].is_dust() {
+                redstone.link(self.get(neighbor.up()).unwrap());
             }
         }
     }

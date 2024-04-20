@@ -106,6 +106,40 @@ pub struct RedstoneDust<'r> {
     pub(crate) sources: RefCell<Vec<(u8, &'r Redstone<'r>)>>,
 }
 
+impl<'r> RedstoneDust<'r> {
+    fn traverse_graph_to_add_weighted_edge(&self, dust: &'r Redstone<'r>) {
+        let mut queue = VecDeque::new();
+        queue.push_front((0, dust));
+
+        let mut anticycle = HashSet::new();
+
+        while let Some(current) = queue.pop_front() {
+            if anticycle.contains(&(current.1 as *const Redstone)) {
+                continue;
+            }
+
+            anticycle.insert(current.1 as *const Redstone);
+
+            match current.1.node {
+                RedstoneNode::Block(_) => add_weighted_edge(dust, current.1, current.0),
+                RedstoneNode::Torch(_) => add_weighted_edge(dust, current.1, current.0),
+                RedstoneNode::Dust(_) => {
+                    for neighbor in self.neighbors.borrow().iter() {
+                        queue.push_back((current.0 + 1, *neighbor));
+                    }
+                }
+                RedstoneNode::Repeater(ref repeater) => {
+                    if let Some(outgoing) = repeater.outgoing.get() {
+                        if std::ptr::eq(outgoing, current.1) {
+                            add_weighted_edge(dust, current.1, current.0);
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 impl<'r> ConstraintDispatch<'r> for RedstoneDust<'r> {
     fn dispatch(&self, ctxt: ConstraintCtxt<'r>) -> Vec<Rc<Constraint<'r>>> {
         let mut extra = Vec::new();
@@ -256,6 +290,7 @@ impl<'r> Redstone<'r> {
             RedstoneNode::Dust(dust) => {
                 assert!(dust.neighbors.borrow().len() <= 6);
                 dust.neighbors.borrow_mut().push(target);
+                dust.traverse_graph_to_add_weighted_edge(self);
             }
             RedstoneNode::Block(block) => {
                 assert!(block.outgoing.borrow().len() <= 6);
@@ -276,6 +311,7 @@ impl<'r> Redstone<'r> {
                 if self.is_undirected() {
                     assert!(dust.neighbors.borrow().len() <= 6);
                     dust.neighbors.borrow_mut().push(self);
+                    dust.traverse_graph_to_add_weighted_edge(target);
                 }
             }
             RedstoneNode::Block(block) => {

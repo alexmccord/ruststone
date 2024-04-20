@@ -12,7 +12,7 @@ pub struct Vec3(pub i32, pub i32, pub i32);
 /// A fresh reminder on Minecraft's coordinate system:
 ///
 /// Heading up means to increment the Y-axis, and down to decrement the Y-axis.
-/// Heading west means to increment the X-axis, and east to decrement the X-axis.
+/// Heading west means to decrement the X-axis, and east to increment the X-axis.
 /// Heading north means to decrement the Z-axis, and south to increment the Z-axis.
 impl Vec3 {
     pub fn x(self) -> i32 {
@@ -40,11 +40,11 @@ impl Vec3 {
     }
 
     pub fn west(self) -> Vec3 {
-        self + Vec3(1, 0, 0)
+        self - Vec3(1, 0, 0)
     }
 
     pub fn east(self) -> Vec3 {
-        self - Vec3(1, 0, 0)
+        self + Vec3(1, 0, 0)
     }
 
     pub fn north(self) -> Vec3 {

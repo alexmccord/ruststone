@@ -79,8 +79,8 @@ fn and_gate() {
     assert!(world.get(Vec3(0, 1, 2)).unwrap().redstate().is_on());
     assert!(world.get(Vec3(2, 2, 0)).unwrap().redstate().is_off());
     assert!(world.get(Vec3(2, 2, 2)).unwrap().redstate().is_off());
-    assert!(world.get(Vec3(3, 1, 1)).unwrap().redstate().is_off());
-    assert!(world.get(Vec3(4, 1, 1)).unwrap().redstate().is_off());
+    assert!(world.get(Vec3(3, 1, 1)).unwrap().redstate().is_on());
+    assert!(world.get(Vec3(4, 1, 1)).unwrap().redstate().is_on());
 }
 
 #[test]
@@ -108,8 +108,8 @@ fn and_gate_left_torch_off() {
     assert!(world.get(Vec3(0, 1, 2)).unwrap().redstate().is_on());
     assert!(world.get(Vec3(2, 2, 0)).unwrap().redstate().is_on());
     assert!(world.get(Vec3(2, 2, 2)).unwrap().redstate().is_off());
-    assert!(world.get(Vec3(3, 1, 1)).unwrap().redstate().is_on());
-    assert!(world.get(Vec3(4, 1, 1)).unwrap().redstate().is_on());
+    assert!(world.get(Vec3(3, 1, 1)).unwrap().redstate().is_off());
+    assert!(world.get(Vec3(4, 1, 1)).unwrap().redstate().is_off());
 }
 
 #[test]
@@ -125,4 +125,22 @@ fn double_torches() {
 
     assert!(world.get(Vec3(0, 1, 0)).unwrap().redstate().is_on());
     assert!(world.get(Vec3(1, 1, 0)).unwrap().redstate().is_on());
+}
+
+#[test]
+fn escalating_dusts() {
+    let mut world = World::new();
+
+    world[Vec3(0, 0, 0)] = Voxel::stone().voxel();
+    world[Vec3(0, 1, 0)] = Voxel::torch().voxel();
+    world[Vec3(1, 0, 0)] = Voxel::stone().voxel();
+    world[Vec3(1, 1, 0)] = Voxel::dust().voxel();
+    world[Vec3(2, 1, 0)] = Voxel::stone().voxel();
+    world[Vec3(2, 2, 0)] = Voxel::dust().voxel();
+
+    world.run();
+
+    assert!(world.get(Vec3(0, 1, 0)).unwrap().redstate().is_on());
+    assert!(world.get(Vec3(1, 1, 0)).unwrap().redstate().is_on());
+    assert!(world.get(Vec3(2, 2, 0)).unwrap().redstate().is_on());
 }
