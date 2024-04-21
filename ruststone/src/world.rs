@@ -13,70 +13,71 @@ use crate::{
     ConstraintGraph, Redstone, RedstoneArena,
 };
 
-// Not the greatest name. Should rename first chance a better name comes up.
+#[derive(Clone, Copy)]
 struct VoxelContext<'r> {
     vec3: Vec3,
     voxel: &'r Voxel,
     redstone: Option<&'r Redstone<'r>>,
 }
 
-struct Neighbors<T> {
-    up: T,
-    down: T,
-    left: T,
-    right: T,
-    front: T,
-    back: T,
+struct Neighbors<T: Copy> {
+    components: [T; 6],
 }
 
-impl<T> Neighbors<T> {
+impl<T: Copy> Neighbors<T> {
     fn new(up: T, down: T, left: T, right: T, front: T, back: T) -> Neighbors<T> {
-        Neighbors {
-            up,
-            down,
-            left,
-            right,
-            front,
-            back,
-        }
+        Neighbors::from_components([up, down, left, right, front, back])
     }
 
-    fn map<F: FnMut(&T) -> U, U>(&self, mut f: F) -> Neighbors<U> {
-        Neighbors::new(
-            f(&self.up),
-            f(&self.down),
-            f(&self.left),
-            f(&self.right),
-            f(&self.front),
-            f(&self.back),
-        )
+    fn from_components(components: [T; 6]) -> Neighbors<T> {
+        Neighbors { components }
+    }
+
+    fn map<F: FnMut(T) -> U, U: Copy>(&self, f: F) -> Neighbors<U> {
+        Neighbors::from_components(self.components.map(f))
+    }
+
+    fn up(&self) -> &T {
+        &self.components[0]
+    }
+
+    fn down(&self) -> &T {
+        &self.components[1]
+    }
+
+    fn left(&self) -> &T {
+        &self.components[2]
+    }
+
+    fn right(&self) -> &T {
+        &self.components[3]
+    }
+
+    fn front(&self) -> &T {
+        &self.components[4]
+    }
+
+    fn back(&self) -> &T {
+        &self.components[5]
     }
 }
 
-struct NeighborsIter<'n, T> {
+struct NeighborsIter<'n, T: Copy> {
     neighbors: &'n Neighbors<T>,
     idx: u8,
 }
 
-impl<'n, T> Iterator for NeighborsIter<'n, T> {
+impl<'n, T: Copy> Iterator for NeighborsIter<'n, T> {
     type Item = &'n T;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let result = match self.idx {
-            0 => Some(&self.neighbors.up),
-            1 => Some(&self.neighbors.down),
-            2 => Some(&self.neighbors.left),
-            3 => Some(&self.neighbors.right),
-            4 => Some(&self.neighbors.front),
-            5 => Some(&self.neighbors.back),
-            _ => None,
-        };
+        let i = self.idx;
         self.idx += 1;
-        result
+        self.neighbors.components.get(i as usize)
     }
 }
 
-impl<'n, T> IntoIterator for &'n Neighbors<T> {
+impl<'n, T: Copy> IntoIterator for &'n Neighbors<T> {
     type Item = &'n T;
     type IntoIter = NeighborsIter<'n, T>;
 
@@ -159,9 +160,9 @@ impl<'r> World<'r> {
 
     fn neighbors(&'r self, vec3: Vec3) -> Neighbors<VoxelContext> {
         World::vec3_neighbors(vec3).map(|v| VoxelContext {
-            vec3: *v,
-            voxel: &self[*v],
-            redstone: self.get(*v),
+            vec3: v,
+            voxel: &self[v],
+            redstone: self.get(v),
         })
     }
 
@@ -283,8 +284,8 @@ impl<'r> World<'r> {
         let neighbors = self.neighbors(vec3);
 
         // A dust must be placed on a stone at all times.
-        assert!(neighbors.down.voxel.is_stone());
-        redstone.link(neighbors.down.redstone.unwrap());
+        assert!(neighbors.down().voxel.is_stone());
+        redstone.link(neighbors.down().redstone.unwrap());
 
         let (viable, nonviable): (Vec<&VoxelContext>, Vec<&VoxelContext>) = neighbors
             .into_iter()
@@ -294,7 +295,7 @@ impl<'r> World<'r> {
             redstone.link(ctx.redstone.unwrap());
         }
 
-        if neighbors.up.voxel.is_air() {
+        if neighbors.up().voxel.is_air() {
             for ctx in nonviable.iter().filter(|ctx| ctx.voxel.is_dust()) {
                 redstone.link(ctx.redstone.unwrap());
             }
