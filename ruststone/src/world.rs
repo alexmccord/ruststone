@@ -14,7 +14,7 @@ use crate::{
 };
 
 #[derive(Clone, Copy)]
-struct VoxelContext<'r> {
+struct VoxelCtxt<'r> {
     vec3: Vec3,
     voxel: &'r Voxel,
     redstone: Option<&'r Redstone<'r>>,
@@ -158,8 +158,8 @@ impl<'r> World<'r> {
         )
     }
 
-    fn neighbors(&'r self, vec3: Vec3) -> Neighbors<VoxelContext> {
-        World::vec3_neighbors(vec3).map(|v| VoxelContext {
+    fn neighbors(&'r self, vec3: Vec3) -> Neighbors<VoxelCtxt> {
+        World::vec3_neighbors(vec3).map(|v| VoxelCtxt {
             vec3: v,
             voxel: &self[v],
             redstone: self.get(v),
@@ -287,17 +287,17 @@ impl<'r> World<'r> {
         assert!(neighbors.down().voxel.is_stone());
         redstone.link(neighbors.down().redstone.unwrap());
 
-        let (viable, nonviable): (Vec<&VoxelContext>, Vec<&VoxelContext>) = neighbors
+        let (viable, nonviable): (Vec<&VoxelCtxt>, Vec<&VoxelCtxt>) = neighbors
             .into_iter()
             .partition(|n| self.is_linkable_from_dust((vec3, dust), (n.vec3, n.voxel)));
 
-        for ctx in viable {
-            redstone.link(ctx.redstone.unwrap());
+        for ctxt in viable {
+            redstone.link(ctxt.redstone.unwrap());
         }
 
         if neighbors.up().voxel.is_air() {
-            for ctx in nonviable.iter().filter(|ctx| ctx.voxel.is_dust()) {
-                redstone.link(ctx.redstone.unwrap());
+            for ctxt in nonviable.iter().filter(|ctx| ctx.voxel.is_dust()) {
+                redstone.link(ctxt.redstone.unwrap());
             }
         }
     }
