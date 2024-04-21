@@ -8,7 +8,7 @@ use std::{
 use typed_arena::Arena;
 
 use crate::{
-    constraints::{Constraint, ConstraintCtxt, ConstraintDispatch, Frame},
+    dispatch::{RedstoneDispatchCtxt, RedstoneEvent, RedstoneDispatch, Frame},
     redstate::Redstate,
 };
 
@@ -77,20 +77,20 @@ pub struct RedstoneTorch<'r> {
     pub(crate) outgoing: RefCell<Vec<&'r Redstone<'r>>>,
 }
 
-impl<'r> ConstraintDispatch<'r> for RedstoneTorch<'r> {
-    fn dispatch(&self, ctxt: ConstraintCtxt<'r>) -> Vec<Rc<Constraint<'r>>> {
+impl<'r> RedstoneDispatch<'r> for RedstoneTorch<'r> {
+    fn dispatch(&self, event: RedstoneEvent<'r>) -> Vec<Rc<RedstoneDispatchCtxt<'r>>> {
         let mut extra = Vec::new();
 
         match &self.incoming.get() {
-            Some(incoming) => ctxt
+            Some(incoming) => event
                 .redstone
                 .redstate()
                 .set_power(if incoming.redstate().is_on() { 0 } else { 16 }),
-            None => ctxt.redstone.redstate().set_power(16),
+            None => event.redstone.redstate().set_power(16),
         }
 
         for out in self.outgoing.borrow().iter() {
-            extra.push(Constraint::new(out, ctxt.current_frame));
+            extra.push(RedstoneDispatchCtxt::new(out, event.current_frame));
         }
 
         extra
@@ -106,8 +106,8 @@ pub struct RedstoneDust<'r> {
     pub(crate) sources: RefCell<Vec<(u8, &'r Redstone<'r>)>>,
 }
 
-impl<'r> ConstraintDispatch<'r> for RedstoneDust<'r> {
-    fn dispatch(&self, ctxt: ConstraintCtxt<'r>) -> Vec<Rc<Constraint<'r>>> {
+impl<'r> RedstoneDispatch<'r> for RedstoneDust<'r> {
+    fn dispatch(&self, event: RedstoneEvent<'r>) -> Vec<Rc<RedstoneDispatchCtxt<'r>>> {
         let mut extra = Vec::new();
 
         let sources = self.sources.borrow();
@@ -119,12 +119,12 @@ impl<'r> ConstraintDispatch<'r> for RedstoneDust<'r> {
             return extra;
         };
 
-        ctxt.redstone
+        event.redstone
             .redstate()
             .set_power(redstate.get_power().saturating_sub(*weight));
 
         for neighbor in self.neighbors.borrow().iter() {
-            extra.push(Constraint::new(neighbor, ctxt.current_frame));
+            extra.push(RedstoneDispatchCtxt::new(neighbor, event.current_frame));
         }
 
         extra
@@ -141,8 +141,8 @@ pub struct Block<'r> {
     pub(crate) outgoing: RefCell<Vec<&'r Redstone<'r>>>,
 }
 
-impl<'r> ConstraintDispatch<'r> for Block<'r> {
-    fn dispatch(&self, ctxt: ConstraintCtxt<'r>) -> Vec<Rc<Constraint<'r>>> {
+impl<'r> RedstoneDispatch<'r> for Block<'r> {
+    fn dispatch(&self, event: RedstoneEvent<'r>) -> Vec<Rc<RedstoneDispatchCtxt<'r>>> {
         let mut extra = Vec::new();
 
         let has_power = self.incoming.borrow().iter().any(|r| r.redstate().is_on());
@@ -152,13 +152,13 @@ impl<'r> ConstraintDispatch<'r> for Block<'r> {
             .iter()
             .any(|r| r.redstate().is_forced());
 
-        ctxt.redstone.redstate().set_forced(has_power);
-        ctxt.redstone
+        event.redstone.redstate().set_forced(has_power);
+        event.redstone
             .redstate()
             .set_power(if is_forced { 16 } else { 0 });
 
         for out in self.outgoing.borrow().iter() {
-            extra.push(Constraint::new(out, ctxt.current_frame));
+            extra.push(RedstoneDispatchCtxt::new(out, event.current_frame));
         }
 
         extra
@@ -176,8 +176,8 @@ pub struct RedstoneRepeater<'r> {
     pub(crate) neighbors: RefCell<Vec<&'r Redstone<'r>>>,
 }
 
-impl<'r> ConstraintDispatch<'r> for RedstoneRepeater<'r> {
-    fn dispatch(&self, ctxt: ConstraintCtxt<'r>) -> Vec<Rc<Constraint<'r>>> {
+impl<'r> RedstoneDispatch<'r> for RedstoneRepeater<'r> {
+    fn dispatch(&self, event: RedstoneEvent<'r>) -> Vec<Rc<RedstoneDispatchCtxt<'r>>> {
         let mut extra = Vec::new();
 
         // If any neighbors are on, we'll need to lock the redstate of this repeater.
@@ -189,15 +189,15 @@ impl<'r> ConstraintDispatch<'r> for RedstoneRepeater<'r> {
             return extra;
         };
 
-        ctxt.redstone
+        event.redstone
             .redstate()
             .set_forced(incoming.redstate().is_on());
-        ctxt.redstone
+        event.redstone
             .redstate()
             .set_power(if incoming.redstate().is_on() { 16 } else { 0 });
 
         if let Some(outgoing) = self.outgoing.get() {
-            extra.push(Constraint::new(outgoing, ctxt.current_frame));
+            extra.push(RedstoneDispatchCtxt::new(outgoing, event.current_frame));
         }
 
         extra
@@ -383,13 +383,13 @@ impl<'r> Display for Redstone<'r> {
     }
 }
 
-impl<'r> ConstraintDispatch<'r> for Redstone<'r> {
-    fn dispatch(&self, ctxt: ConstraintCtxt<'r>) -> Vec<Rc<Constraint<'r>>> {
+impl<'r> RedstoneDispatch<'r> for Redstone<'r> {
+    fn dispatch(&self, event: RedstoneEvent<'r>) -> Vec<Rc<RedstoneDispatchCtxt<'r>>> {
         match self.node() {
-            RedstoneNode::Torch(torch) => torch.dispatch(ctxt),
-            RedstoneNode::Dust(dust) => dust.dispatch(ctxt),
-            RedstoneNode::Block(block) => block.dispatch(ctxt),
-            RedstoneNode::Repeater(repeater) => repeater.dispatch(ctxt),
+            RedstoneNode::Torch(torch) => torch.dispatch(event),
+            RedstoneNode::Dust(dust) => dust.dispatch(event),
+            RedstoneNode::Block(block) => block.dispatch(event),
+            RedstoneNode::Repeater(repeater) => repeater.dispatch(event),
         }
     }
 

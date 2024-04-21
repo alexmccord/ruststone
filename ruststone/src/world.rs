@@ -10,7 +10,7 @@ use crate::{
     add_weighted_edge,
     vec3::Vec3,
     voxels::{DustVoxel, Facing, TorchVoxel, Voxel},
-    ConstraintGraph, Redstone, RedstoneArena,
+    RedstoneGraph, Redstone, RedstoneArena,
 };
 
 #[derive(Clone, Copy)]
@@ -122,8 +122,8 @@ impl<'r> World<'r> {
     }
 
     pub fn run(&'r self) {
-        for cg in self.get_constraint_graphs() {
-            cg.solve_constraints();
+        for rg in self.get_constraint_graphs() {
+            rg.run();
         }
     }
 
@@ -166,7 +166,7 @@ impl<'r> World<'r> {
         })
     }
 
-    fn get_constraint_graphs(&'r self) -> Vec<ConstraintGraph<'r>> {
+    fn get_constraint_graphs(&'r self) -> Vec<RedstoneGraph<'r>> {
         for (vec3, voxel) in &self.voxels {
             match voxel {
                 Voxel::Air(..) => continue,
@@ -214,7 +214,7 @@ impl<'r> World<'r> {
         // know how to collect the constraints from each disjoint redstone graphs
         // in order to dispatch all of them.
         let mut seen = HashSet::new();
-        let mut cgs = Vec::new();
+        let mut rgs = Vec::new();
 
         for &redstone in self.redstones.borrow().values() {
             if seen.contains(&(redstone as *const Redstone)) {
@@ -225,10 +225,10 @@ impl<'r> World<'r> {
                 seen.insert(r as *const Redstone);
             }
 
-            cgs.push(ConstraintGraph::collect(redstone));
+            rgs.push(RedstoneGraph::collect(redstone));
         }
 
-        cgs
+        rgs
     }
 
     fn is_linkable_from_torch(&self, torch: (Vec3, &TorchVoxel), other: (Vec3, &Voxel)) -> bool {

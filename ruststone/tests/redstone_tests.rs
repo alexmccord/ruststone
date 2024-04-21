@@ -1,4 +1,4 @@
-use ruststone::{ConstraintGraph, RedstoneArena};
+use ruststone::{RedstoneGraph, RedstoneArena};
 
 #[test]
 fn torch_and_dust() {
@@ -11,8 +11,8 @@ fn torch_and_dust() {
 
     ruststone::add_weighted_edge(dust, torch, 1);
 
-    let cg = ConstraintGraph::collect(torch);
-    cg.solve_constraints();
+    let rg = RedstoneGraph::collect(torch);
+    rg.run();
 
     assert_eq!(torch.redstate().get_power(), 16);
     assert_eq!(dust.redstate().get_power(), 15);
@@ -35,8 +35,8 @@ fn torch_and_dust_and_dust_and_dust() {
     ruststone::add_weighted_edge(dust2, torch, 2);
     ruststone::add_weighted_edge(dust3, torch, 3);
 
-    let cg = ConstraintGraph::collect(torch);
-    cg.solve_constraints();
+    let rg = RedstoneGraph::collect(torch);
+    rg.run();
 
     assert_eq!(torch.redstate().get_power(), 16);
     assert_eq!(dust1.redstate().get_power(), 15);
@@ -103,8 +103,8 @@ fn torch_and_dust_until_it_runs_out_of_redpower() {
     ruststone::add_weighted_edge(dust16, torch, 16);
     ruststone::add_weighted_edge(dust17, torch, 17);
 
-    let cg = ConstraintGraph::collect(torch);
-    cg.solve_constraints();
+    let rg = RedstoneGraph::collect(torch);
+    rg.run();
 
     assert_eq!(torch.redstate().get_power(), 16);
     assert_eq!(dust15.redstate().get_power(), 1);
@@ -143,8 +143,8 @@ fn dust_in_the_middle_of_two_torches() {
     ruststone::add_weighted_edge(dust2, torch_r, 4);
     ruststone::add_weighted_edge(dust1, torch_r, 5);
 
-    let cg = ConstraintGraph::collect(torch_l);
-    cg.solve_constraints();
+    let rg = RedstoneGraph::collect(torch_l);
+    rg.run();
 
     assert_eq!(torch_l.redstate().get_power(), 16);
     assert_eq!(dust1.redstate().get_power(), 15);
@@ -170,8 +170,8 @@ fn torch_is_off_if_its_incoming_edge_is_on() {
 
     ruststone::add_weighted_edge(dust, torch, 1);
 
-    let cg = ConstraintGraph::collect(torch);
-    cg.solve_constraints();
+    let rg = RedstoneGraph::collect(torch);
+    rg.run();
 
     assert_eq!(torch.redstate().get_power(), 16);
     assert_eq!(dust.redstate().get_power(), 15);
@@ -195,8 +195,8 @@ fn torch_and_dust_and_block_and_dust() {
 
     ruststone::add_weighted_edge(dust1, torch, 1);
 
-    let cg = ConstraintGraph::collect(torch);
-    cg.solve_constraints();
+    let rg = RedstoneGraph::collect(torch);
+    rg.run();
 
     assert_eq!(torch.redstate().get_power(), 16);
     assert_eq!(dust1.redstate().get_power(), 15);
@@ -242,8 +242,8 @@ fn and_gate() {
     ruststone::add_weighted_edge(dust_m, and_l, 1);
     ruststone::add_weighted_edge(dust_m, and_r, 1);
 
-    let cg = ConstraintGraph::collect(output);
-    cg.solve_constraints();
+    let rg = RedstoneGraph::collect(output);
+    rg.run();
 
     assert!(input_l.redstate().is_on());
     assert!(input_r.redstate().is_on());
@@ -286,8 +286,8 @@ fn and_gate_with_one_arm_off() {
     ruststone::add_weighted_edge(dust_m, and_l, 1);
     ruststone::add_weighted_edge(dust_m, and_r, 1);
 
-    let cg = ConstraintGraph::collect(output);
-    cg.solve_constraints();
+    let rg = RedstoneGraph::collect(output);
+    rg.run();
 
     assert!(input_r.redstate().is_on());
     assert!(and_l.redstate().is_on());
@@ -326,8 +326,8 @@ fn and_gate_with_both_arms_off() {
     ruststone::add_weighted_edge(dust_m, and_l, 1);
     ruststone::add_weighted_edge(dust_m, and_r, 1);
 
-    let cg = ConstraintGraph::collect(output);
-    cg.solve_constraints();
+    let rg = RedstoneGraph::collect(output);
+    rg.run();
 
     assert!(and_l.redstate().is_on());
     assert!(and_r.redstate().is_on());
@@ -416,8 +416,8 @@ fn xor_gate() {
     ruststone::add_weighted_edge(output, torch_after_dust_inversion_l, 1);
     ruststone::add_weighted_edge(output, torch_after_dust_inversion_r, 1);
 
-    let cg = ConstraintGraph::collect(output);
-    cg.solve_constraints();
+    let rg = RedstoneGraph::collect(output);
+    rg.run();
 
     assert!(input_l.redstate().is_on());
     assert!(input_r.redstate().is_on());
@@ -510,8 +510,8 @@ fn xor_gate_with_left_off() {
     ruststone::add_weighted_edge(output, torch_after_dust_inversion_l, 1);
     ruststone::add_weighted_edge(output, torch_after_dust_inversion_r, 1);
 
-    let cg = ConstraintGraph::collect(output);
-    cg.solve_constraints();
+    let rg = RedstoneGraph::collect(output);
+    rg.run();
 
     assert!(input_r.redstate().is_on());
     assert!(torch_on_top_block_l.redstate().is_on());
@@ -603,8 +603,8 @@ fn xor_gate_with_right_off() {
     ruststone::add_weighted_edge(output, torch_after_dust_inversion_l, 1);
     ruststone::add_weighted_edge(output, torch_after_dust_inversion_r, 1);
 
-    let cg = ConstraintGraph::collect(output);
-    cg.solve_constraints();
+    let rg = RedstoneGraph::collect(output);
+    rg.run();
 
     assert!(input_l.redstate().is_on());
     assert!(torch_on_top_block_l.redstate().is_off());
@@ -693,8 +693,8 @@ fn xor_gate_with_both_off() {
     ruststone::add_weighted_edge(output, torch_after_dust_inversion_l, 1);
     ruststone::add_weighted_edge(output, torch_after_dust_inversion_r, 1);
 
-    let cg = ConstraintGraph::collect(output);
-    cg.solve_constraints();
+    let rg = RedstoneGraph::collect(output);
+    rg.run();
 
     assert!(torch_on_top_block_l.redstate().is_on());
     assert!(torch_on_top_block_r.redstate().is_on());
@@ -736,8 +736,8 @@ fn memory_cell() {
     ruststone::add_weighted_edge(dust_b1, torch_b, 1);
     ruststone::add_weighted_edge(dust_b2, torch_b, 2);
 
-    let cg = ConstraintGraph::collect(block_a);
-    cg.solve_constraints();
+    let rg = RedstoneGraph::collect(block_a);
+    rg.run();
 
     assert!(torch_a.redstate().is_on());
     assert!(torch_b.redstate().is_off());
@@ -773,8 +773,8 @@ fn memory_cell_alt() {
     ruststone::add_weighted_edge(dust_b1, torch_b, 1);
     ruststone::add_weighted_edge(dust_b2, torch_b, 2);
 
-    let cg = ConstraintGraph::collect(block_b);
-    cg.solve_constraints();
+    let rg = RedstoneGraph::collect(block_b);
+    rg.run();
 
     assert!(torch_a.redstate().is_off());
     assert!(torch_b.redstate().is_on());
@@ -795,8 +795,8 @@ fn torch_and_dust_and_block_and_repeater() {
 
     ruststone::add_weighted_edge(dust, torch, 1);
 
-    let cg = ConstraintGraph::collect(torch);
-    cg.solve_constraints();
+    let rg = RedstoneGraph::collect(torch);
+    rg.run();
 
     assert_eq!(torch.redstate().get_power(), 16);
     assert_eq!(dust.redstate().get_power(), 15);
@@ -825,8 +825,8 @@ fn torch_and_dust_and_block_and_repeater_and_block_and_dust() {
     ruststone::add_weighted_edge(dust1, torch, 1);
     ruststone::add_weighted_edge(dust2, block2, 1);
 
-    let cg = ConstraintGraph::collect(torch);
-    cg.solve_constraints();
+    let rg = RedstoneGraph::collect(torch);
+    rg.run();
 
     assert_eq!(torch.redstate().get_power(), 16);
     assert_eq!(dust1.redstate().get_power(), 15);
@@ -874,8 +874,8 @@ fn repeater_locked_by_its_neighbor() {
 
     ruststone::lock(throughput, locker);
 
-    let cg = ConstraintGraph::collect(output);
-    cg.solve_constraints();
+    let rg = RedstoneGraph::collect(output);
+    rg.run();
 
     assert!(torch.redstate().is_on());
     assert_eq!(dust1.redstate().get_power(), 15);
@@ -923,8 +923,8 @@ fn repeater_locked_by_its_slower_neighbor() {
 
     ruststone::lock(throughput, locker);
 
-    let cg = ConstraintGraph::collect(output);
-    cg.solve_constraints();
+    let rg = RedstoneGraph::collect(output);
+    rg.run();
 
     assert!(torch.redstate().is_on());
     assert_eq!(dust1.redstate().get_power(), 15);
@@ -972,8 +972,8 @@ fn repeater_locked_simultaneously_by_its_neighbors() {
 
     ruststone::lock(throughput, locker);
 
-    let cg = ConstraintGraph::collect(output);
-    cg.solve_constraints();
+    let rg = RedstoneGraph::collect(output);
+    rg.run();
 
     assert!(torch.redstate().is_on());
     assert_eq!(dust1.redstate().get_power(), 15);

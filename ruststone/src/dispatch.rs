@@ -13,20 +13,19 @@ impl Add for Frame {
     }
 }
 
-pub(crate) struct ConstraintCtxt<'r> {
+pub(crate) struct RedstoneEvent<'r> {
     pub(crate) current_frame: Frame,
     pub(crate) redstone: &'r Redstone<'r>,
 }
 
-pub(crate) struct Constraint<'r> {
-    // The next frame this constraint can be dispatched.
+pub(crate) struct RedstoneDispatchCtxt<'r> {
     next_dispatch_frame: Frame,
     redstone: &'r Redstone<'r>,
 }
 
-impl<'r> Constraint<'r> {
-    pub(crate) fn new(redstone: &'r Redstone<'r>, next_dispatch_frame: Frame) -> Rc<Constraint> {
-        Rc::new(Constraint {
+impl<'r> RedstoneDispatchCtxt<'r> {
+    pub(crate) fn new(redstone: &'r Redstone<'r>, next_dispatch_frame: Frame) -> Rc<RedstoneDispatchCtxt> {
+        Rc::new(RedstoneDispatchCtxt {
             next_dispatch_frame,
             redstone,
         })
@@ -36,33 +35,33 @@ impl<'r> Constraint<'r> {
         (self.next_dispatch_frame + self.redstone.dispatch_frame_offset()) <= current_frame
     }
 
-    fn dispatch(&self, frame: Frame) -> Vec<Rc<Constraint<'r>>> {
+    fn dispatch(&self, frame: Frame) -> Vec<Rc<RedstoneDispatchCtxt<'r>>> {
         assert!(self.dispatchable(frame));
-        self.redstone.dispatch(ConstraintCtxt {
+        self.redstone.dispatch(RedstoneEvent {
             current_frame: frame,
             redstone: self.redstone,
         })
     }
 }
 
-pub(crate) trait ConstraintDispatch<'r> {
-    fn dispatch(&self, ctxt: ConstraintCtxt<'r>) -> Vec<Rc<Constraint<'r>>>;
+pub(crate) trait RedstoneDispatch<'r> {
+    fn dispatch(&self, event: RedstoneEvent<'r>) -> Vec<Rc<RedstoneDispatchCtxt<'r>>>;
 
     fn dispatch_frame_offset(&self) -> Frame;
 }
 
-struct ConstraintSolvingEvent<'r>(String, &'r RefCell<Vec<String>>);
+struct RedstoneDispatchSnapshot<'r>(String, &'r RefCell<Vec<String>>);
 
-impl<'r> ConstraintSolvingEvent<'r> {
-    fn new(vec: &'r RefCell<Vec<String>>) -> ConstraintSolvingEvent {
-        ConstraintSolvingEvent(String::new(), vec)
+impl<'r> RedstoneDispatchSnapshot<'r> {
+    fn new(vec: &'r RefCell<Vec<String>>) -> RedstoneDispatchSnapshot {
+        RedstoneDispatchSnapshot(String::new(), vec)
     }
 
-    fn write<T: ToString>(self, str: T) -> ConstraintSolvingEvent<'r> {
+    fn write<T: ToString>(self, str: T) -> RedstoneDispatchSnapshot<'r> {
         if self.0.is_empty() {
-            ConstraintSolvingEvent(str.to_string(), self.1)
+            RedstoneDispatchSnapshot(str.to_string(), self.1)
         } else {
-            ConstraintSolvingEvent(self.0 + " " + &str.to_string(), self.1)
+            RedstoneDispatchSnapshot(self.0 + " " + &str.to_string(), self.1)
         }
     }
 
@@ -71,40 +70,40 @@ impl<'r> ConstraintSolvingEvent<'r> {
     }
 }
 
-pub struct ConstraintGraph<'r> {
-    constraints: Vec<Rc<Constraint<'r>>>,
-    events: RefCell<Vec<String>>,
+pub struct RedstoneGraph<'r> {
+    dispatch_ctxts: Vec<Rc<RedstoneDispatchCtxt<'r>>>,
+    snapshots: RefCell<Vec<String>>,
 }
 
-impl<'r> ConstraintGraph<'r> {
-    pub(crate) fn new() -> ConstraintGraph<'r> {
-        ConstraintGraph {
-            constraints: Vec::new(),
-            events: RefCell::new(Vec::new()),
+impl<'r> RedstoneGraph<'r> {
+    pub(crate) fn new() -> RedstoneGraph<'r> {
+        RedstoneGraph {
+            dispatch_ctxts: Vec::new(),
+            snapshots: RefCell::new(Vec::new()),
         }
     }
 
-    pub fn collect(redstone: &'r Redstone<'r>) -> ConstraintGraph {
-        let mut cg = ConstraintGraph::new();
+    pub fn collect(redstone: &'r Redstone<'r>) -> RedstoneGraph {
+        let mut rg = RedstoneGraph::new();
 
         for redstone in redstone.into_iter() {
             if let RedstoneNode::Torch(..) = redstone.node() {
-                cg.constraints.push(Constraint::new(redstone, Frame(0)));
+                rg.dispatch_ctxts.push(RedstoneDispatchCtxt::new(redstone, Frame(0)));
             }
         }
 
-        cg
+        rg
     }
 
-    pub fn solve_constraints(&self) {
-        let mut queue = VecDeque::from(self.constraints.clone());
+    pub fn run(&self) {
+        let mut queue = VecDeque::from(self.dispatch_ctxts.clone());
         let mut frame = Frame(0);
 
         let mut deferred = VecDeque::new();
         while !queue.is_empty() {
             while let Some(c) = queue.pop_front() {
                 if !c.dispatchable(frame) {
-                    self.new_event()
+                    self.new_snapshot()
                         .write(c.redstone)
                         .write("was deferred")
                         .push();
@@ -114,10 +113,10 @@ impl<'r> ConstraintGraph<'r> {
                 }
 
                 let previous_state = c.redstone.redstate().clone();
-                let extra_constraints = c.dispatch(frame);
+                let consequents = c.dispatch(frame);
                 let new_state = c.redstone.redstate().clone();
 
-                self.new_event()
+                self.new_snapshot()
                     .write(c.redstone)
                     .write("was dispatched, previously")
                     .write(previous_state.is_on())
@@ -126,13 +125,13 @@ impl<'r> ConstraintGraph<'r> {
                     .push();
 
                 if previous_state != new_state {
-                    self.new_event()
-                        .write(extra_constraints.len())
+                    self.new_snapshot()
+                        .write(consequents.len())
                         .write("new constraints queued")
                         .push();
 
-                    for e in extra_constraints {
-                        queue.push_front(e);
+                    for consequent in consequents {
+                        queue.push_front(consequent);
                     }
                 }
             }
@@ -147,7 +146,7 @@ impl<'r> ConstraintGraph<'r> {
                     .map(|c| c.next_dispatch_frame + c.redstone.dispatch_frame_offset())
                     .min();
 
-                self.new_event()
+                self.new_snapshot()
                     .write("advancing to frame")
                     .write(frame.0)
                     .push();
@@ -160,7 +159,7 @@ impl<'r> ConstraintGraph<'r> {
         }
     }
 
-    fn new_event(&self) -> ConstraintSolvingEvent {
-        ConstraintSolvingEvent::new(&self.events)
+    fn new_snapshot(&self) -> RedstoneDispatchSnapshot {
+        RedstoneDispatchSnapshot::new(&self.snapshots)
     }
 }
