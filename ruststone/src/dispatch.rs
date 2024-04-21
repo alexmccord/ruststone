@@ -127,7 +127,7 @@ impl<'r> RedstoneGraph<'r> {
                 if previous_state != new_state {
                     self.new_snapshot()
                         .write(consequents.len())
-                        .write("new constraints queued")
+                        .write("new consequents queued")
                         .push();
 
                     for consequent in consequents {
@@ -136,10 +136,9 @@ impl<'r> RedstoneGraph<'r> {
                 }
             }
 
-            // When the queue is empty, then we're at a point where deferred may have constraints,
-            // in which case we ought to find the earliest dispatchable frame and skip to that.
-            //
-            // We'll terminate only when both queue and deferred is empty.
+            // The queue might be empty, but we might've deferred some of the dispatchables.
+            // In that case, we ought to find the earliest dispatchable frame and go there.
+            // Terminate only when both queue and deferred is empty.
             if queue.is_empty() && !deferred.is_empty() {
                 let earliest_dispatchable_frame = deferred
                     .iter()

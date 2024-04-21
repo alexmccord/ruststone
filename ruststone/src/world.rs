@@ -122,7 +122,7 @@ impl<'r> World<'r> {
     }
 
     pub fn run(&'r self) {
-        for rg in self.get_constraint_graphs() {
+        for rg in self.get_redstone_graphs() {
             rg.run();
         }
     }
@@ -166,7 +166,7 @@ impl<'r> World<'r> {
         })
     }
 
-    fn get_constraint_graphs(&'r self) -> Vec<RedstoneGraph<'r>> {
+    fn get_redstone_graphs(&'r self) -> Vec<RedstoneGraph<'r>> {
         for (vec3, voxel) in &self.voxels {
             match voxel {
                 Voxel::Air(..) => continue,
@@ -211,7 +211,7 @@ impl<'r> World<'r> {
         }
 
         // We need to be able to find all the disjoint redstone graphs so that we
-        // know how to collect the constraints from each disjoint redstone graphs
+        // know how to collect redstone dispatchables from each redstone graphs
         // in order to dispatch all of them.
         let mut seen = HashSet::new();
         let mut rgs = Vec::new();
@@ -221,8 +221,8 @@ impl<'r> World<'r> {
                 continue;
             }
 
-            for r in redstone.into_iter() {
-                seen.insert(r as *const Redstone);
+            for redstone in redstone.into_iter() {
+                seen.insert(redstone as *const Redstone);
             }
 
             rgs.push(RedstoneGraph::collect(redstone));
